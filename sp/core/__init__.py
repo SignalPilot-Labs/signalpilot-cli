@@ -1,0 +1,1 @@
+"""SignalPilot CLI core functionality."""
