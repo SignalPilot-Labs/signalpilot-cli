@@ -1,5 +1,13 @@
-"""Environment management using uv."""
+"""Environment management using uv.
 
+This module handles Python environment setup using uv:
+- Checking and installing uv
+- Installing Python versions
+- Creating virtual environments
+- Installing packages
+"""
+
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -9,7 +17,11 @@ from sp.ui import error, info, success, spinner
 
 
 def check_uv() -> bool:
-    """Check if uv is installed and available."""
+    """Check if uv is installed and available.
+
+    Returns:
+        bool: True if uv is in PATH, False otherwise
+    """
     return shutil.which("uv") is not None
 
 
@@ -17,7 +29,7 @@ def install_uv() -> bool:
     """Install uv using the official installer.
 
     Returns:
-        True if installation succeeded, False otherwise.
+        bool: True if installation succeeded, False otherwise
     """
     info("Installing uv (Python package manager)...")
     try:
@@ -38,7 +50,11 @@ def install_uv() -> bool:
 
 
 def get_uv_path() -> str:
-    """Get the path to uv executable."""
+    """Get the path to uv executable.
+
+    Returns:
+        str: Path to uv executable
+    """
     # Check common locations
     uv = shutil.which("uv")
     if uv:
@@ -61,7 +77,7 @@ def ensure_uv() -> bool:
     """Ensure uv is available, installing if necessary.
 
     Returns:
-        True if uv is available, False otherwise.
+        bool: True if uv is available, False otherwise
     """
     if check_uv():
         return True
@@ -75,14 +91,38 @@ def ensure_uv() -> bool:
     return True
 
 
+def is_running_in_uvx() -> bool:
+    """Detect if we're running in a uvx temporary environment.
+
+    uvx creates temporary environments and sets UV_PROJECT_ENVIRONMENT.
+    This is used to detect if 'sp activate' is being run via 'uvx sp-cli activate'.
+
+    Returns:
+        bool: True if running in uvx, False otherwise
+    """
+    # Check for UV_PROJECT_ENVIRONMENT (set by uvx)
+    if "UV_PROJECT_ENVIRONMENT" in os.environ:
+        return True
+
+    # Fallback: check if we're in a .cache/uv path (uvx temp location)
+    try:
+        venv_path = Path(os.environ.get("VIRTUAL_ENV", ""))
+        if ".cache/uv" in str(venv_path):
+            return True
+    except Exception:
+        pass
+
+    return False
+
+
 def install_python(version: str = config.DEFAULT_PYTHON_VERSION) -> bool:
     """Install Python using uv.
 
     Args:
-        version: Python version to install.
+        version: Python version to install (default: from config)
 
     Returns:
-        True if installation succeeded, False otherwise.
+        bool: True if installation succeeded, False otherwise
     """
     uv = get_uv_path()
     with spinner(f"Installing Python {version}..."):
@@ -100,17 +140,17 @@ def install_python(version: str = config.DEFAULT_PYTHON_VERSION) -> bool:
 
 
 def create_venv(
-    path: Path = config.DEFAULT_VENV_DIR,
+    path: Path = config.SP_VENV,
     python_version: str = config.DEFAULT_PYTHON_VERSION,
 ) -> bool:
     """Create a virtual environment using uv.
 
     Args:
-        path: Path where the venv will be created.
-        python_version: Python version to use.
+        path: Path where the venv will be created (default: ~/SignalPilotHome/.venv)
+        python_version: Python version to use (default: from config)
 
     Returns:
-        True if creation succeeded, False otherwise.
+        bool: True if creation succeeded, False otherwise
     """
     uv = get_uv_path()
     with spinner("Creating virtual environment..."):
@@ -129,16 +169,16 @@ def create_venv(
 
 def install_packages(
     packages: list[str],
-    venv_path: Path = config.DEFAULT_VENV_DIR,
+    venv_path: Path = config.SP_VENV,
 ) -> bool:
     """Install packages into a virtual environment using uv.
 
     Args:
-        packages: List of packages to install.
-        venv_path: Path to the virtual environment.
+        packages: List of packages to install
+        venv_path: Path to the virtual environment (default: ~/SignalPilotHome/.venv)
 
     Returns:
-        True if installation succeeded, False otherwise.
+        bool: True if installation succeeded, False otherwise
     """
     if not packages:
         return True
@@ -158,14 +198,14 @@ def install_packages(
     return True
 
 
-def get_installed_packages(venv_path: Path = config.DEFAULT_VENV_DIR) -> list[str]:
+def get_installed_packages(venv_path: Path = config.SP_VENV) -> list[str]:
     """Get list of installed packages in a venv.
 
     Args:
-        venv_path: Path to the virtual environment.
+        venv_path: Path to the virtual environment (default: ~/SignalPilotHome/.venv)
 
     Returns:
-        List of installed package names.
+        list[str]: List of installed package names
     """
     uv = get_uv_path()
     result = subprocess.run(
@@ -183,16 +223,16 @@ def get_installed_packages(venv_path: Path = config.DEFAULT_VENV_DIR) -> list[st
     return packages
 
 
-def get_python_version(venv_path: Path = config.DEFAULT_VENV_DIR) -> str | None:
+def get_python_version(venv_path: Path = config.SP_VENV) -> str | None:
     """Get the Python version of a venv.
 
     Args:
-        venv_path: Path to the virtual environment.
+        venv_path: Path to the virtual environment (default: ~/SignalPilotHome/.venv)
 
     Returns:
-        Python version string or None if not found.
+        str | None: Python version string (e.g., "3.12.0") or None if not found
     """
-    python = venv_path / "bin" / "python"
+    python = config.get_venv_python()
     if not python.exists():
         return None
 

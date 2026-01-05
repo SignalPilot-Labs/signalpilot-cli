@@ -1,33 +1,96 @@
-"""SignalPilot CLI configuration - paths and constants."""
+"""SignalPilot CLI configuration - Config SPEC architecture.
 
+This module defines all directory paths and constants according to the
+SignalPilot Config SPEC, which uses a global workspace at ~/SignalPilotHome/
+with separate user and team workspaces.
+
+Note: Windows support is commented out for now. Use WSL on Windows.
+"""
+
+import platform
 from pathlib import Path
 
-# SignalPilot Home directory
-SIGNALPILOT_HOME = Path.home() / "SignalPilotHome"
+# =============================================================================
+# Main Directory
+# =============================================================================
 
-# User directories
-NOTEBOOKS_DIR = SIGNALPILOT_HOME / "notebooks"
-SKILLS_DIR = SIGNALPILOT_HOME / "skills"
-CONNECTIONS_DIR = SIGNALPILOT_HOME / "connections"
-CONFIG_DIR = SIGNALPILOT_HOME / "config"
+SP_HOME = Path.home() / "SignalPilotHome"
 
-# System directories
-SYSTEM_DIR = SIGNALPILOT_HOME / "system"
-DEFAULT_VENV_DIR = SYSTEM_DIR / "signal_pilot"
-LOGS_DIR = SYSTEM_DIR / "logs"
-CACHE_DIR = SYSTEM_DIR / "cache"
+# =============================================================================
+# Configuration
+# =============================================================================
 
-# Jupyter directories
-JUPYTER_DIR = SYSTEM_DIR / "jupyter"
-JUPYTER_RUNTIME_DIR = JUPYTER_DIR / "runtime"
-JUPYTER_KERNELS_DIR = JUPYTER_DIR / "kernels"
+SP_SIGNALPILOT = SP_HOME / ".signalpilot"
+SP_CONFIG_DEFAULTS = SP_SIGNALPILOT / "defaults"
 
-# Default Python version
+# Default config files (shipped with CLI, updated on upgrade)
+SP_DEFAULT_CORE_CONFIG = SP_CONFIG_DEFAULTS / "sp-core.toml"
+SP_DEFAULT_JUPYTER_CONFIG = SP_CONFIG_DEFAULTS / "jupyter_server_config.py"
+SP_DEFAULT_CLI_CONFIG = SP_CONFIG_DEFAULTS / "cli.toml"
+
+# User override config files
+SP_USER_CORE_CONFIG = SP_SIGNALPILOT / "user-sp-core.toml"
+SP_USER_JUPYTER_CONFIG = SP_SIGNALPILOT / "user-jupyter_server_config.py"
+SP_USER_CLI_CONFIG = SP_SIGNALPILOT / "user-cli.toml"
+
+# =============================================================================
+# Skills & Rules
+# =============================================================================
+
+SP_DEFAULT_SKILLS = SP_HOME / "default-skills"
+SP_DEFAULT_RULES = SP_HOME / "default-rules"
+
+# =============================================================================
+# Connections (Credentials - NEVER agent-accessible)
+# =============================================================================
+
+SP_CONNECT = SP_HOME / "connect"
+SP_CONNECT_DB = SP_CONNECT / "db.toml"
+SP_CONNECT_MCP = SP_CONNECT / "mcp.json"
+SP_CONNECT_ENV = SP_CONNECT / ".env"
+SP_CONNECT_FOLDERS = SP_CONNECT / "folders"
+SP_CONNECT_FOLDERS_MANIFEST = SP_CONNECT_FOLDERS / "manifest.toml"
+
+# =============================================================================
+# System
+# =============================================================================
+
+SP_SYSTEM = SP_HOME / "system"
+SP_SYSTEM_VERSION = SP_SYSTEM / "version.toml"
+SP_LOGS = SP_SYSTEM / "logs"
+SP_MIGRATIONS = SP_SYSTEM / "migrations"
+
+# =============================================================================
+# Python Environment
+# =============================================================================
+
+SP_VENV = SP_HOME / ".venv"
+SP_PYPROJECT = SP_HOME / "pyproject.toml"
+
+# =============================================================================
+# Workspaces (Agent-Accessible)
+# =============================================================================
+
+# User Workspace (personal, not version-controlled by default)
+SP_USER_WORKSPACE = SP_HOME / "user-workspace"
+SP_USER_WORKSPACE_DEMO = SP_USER_WORKSPACE / "demo-project"
+SP_USER_WORKSPACE_SKILLS = SP_USER_WORKSPACE / "skills"
+SP_USER_WORKSPACE_RULES = SP_USER_WORKSPACE / "rules"
+SP_USER_WORKSPACE_SKILL_REGISTRY = SP_USER_WORKSPACE_SKILLS / "skill-upload-registry.json"
+
+# Team Workspace (collaborative, git-tracked)
+SP_TEAM_WORKSPACE = SP_HOME / "team-workspace"
+SP_TEAM_WORKSPACE_NOTEBOOKS = SP_TEAM_WORKSPACE / "notebooks"
+SP_TEAM_WORKSPACE_SCRIPTS = SP_TEAM_WORKSPACE / "scripts"
+SP_TEAM_WORKSPACE_SKILLS = SP_TEAM_WORKSPACE / "skills"
+SP_TEAM_WORKSPACE_RULES = SP_TEAM_WORKSPACE / "rules"
+SP_TEAM_WORKSPACE_SKILL_REGISTRY = SP_TEAM_WORKSPACE_SKILLS / "skill-upload-registry.json"
+
+# =============================================================================
+# Python & Package Configuration
+# =============================================================================
+
 DEFAULT_PYTHON_VERSION = "3.12"
-
-# Default kernel name
-DEFAULT_KERNEL_NAME = "signalpilot"
-DEFAULT_KERNEL_DISPLAY_NAME = f"SignalPilot (Python {DEFAULT_PYTHON_VERSION})"
 
 # Core packages (always installed)
 CORE_PACKAGES = [
@@ -37,55 +100,82 @@ CORE_PACKAGES = [
     "numpy",
 ]
 
-# Data science packages (installed unless --minimal)
-DATASCIENCE_PACKAGES = [
-    "matplotlib",
-    "seaborn",
-    "scikit-learn",
+# =============================================================================
+# Agent Containment
+# =============================================================================
+
+# Agent-accessible directories (allowlist)
+AGENT_ACCESSIBLE_DIRS = [
+    SP_USER_WORKSPACE,
+    SP_TEAM_WORKSPACE,
 ]
 
-# SignalPilot packages
-SIGNALPILOT_PACKAGES = [
-    "signalpilot-ai",
+# Agent-accessible directories (read-only)
+AGENT_READONLY_DIRS = [
+    SP_DEFAULT_SKILLS,
+    SP_DEFAULT_RULES,
 ]
 
-# All directories to create during init
-ALL_DIRS = [
-    NOTEBOOKS_DIR,
-    SKILLS_DIR,
-    CONNECTIONS_DIR,
-    CONFIG_DIR,
-    LOGS_DIR,
-    CACHE_DIR,
-    JUPYTER_DIR,
-    JUPYTER_RUNTIME_DIR,
-    JUPYTER_KERNELS_DIR,
+# Agent-inaccessible directories (blocklist)
+AGENT_INACCESSIBLE_DIRS = [
+    SP_CONNECT,       # Credentials
+    SP_SIGNALPILOT,   # System configuration
+    SP_SYSTEM,        # Installation metadata
+    SP_VENV,          # Python environment
 ]
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+
+
+def get_venv_python() -> Path:
+    """Get the path to the venv Python executable.
+
+    Returns:
+        Path: Path to python executable in the shared .venv
+    """
+    # if platform.system() == "Windows":
+    #     return SP_VENV / "Scripts" / "python.exe"
+    return SP_VENV / "bin" / "python"
+
+
+def get_venv_bin(name: str) -> Path:
+    """Get the path to a binary in the venv.
+
+    Args:
+        name: Name of the binary (e.g., 'jupyter', 'pip')
+
+    Returns:
+        Path: Path to the binary in the shared .venv
+    """
+    # if platform.system() == "Windows":
+    #     return SP_VENV / "Scripts" / name
+    return SP_VENV / "bin" / name
 
 
 def get_jupyter_env() -> dict[str, str]:
-    """Get environment variables for Jupyter."""
+    """Get environment variables for Jupyter.
+
+    Only customizes JUPYTER_CONFIG_DIR to point to ~/SignalPilotHome/.signalpilot/.
+    Other Jupyter directories (data, runtime, kernels) use defaults in .venv.
+
+    Returns:
+        dict: Environment variables to set when launching Jupyter
+    """
     return {
-        "JUPYTER_CONFIG_DIR": str(CONFIG_DIR),
-        "JUPYTER_DATA_DIR": str(JUPYTER_DIR),
-        "JUPYTER_RUNTIME_DIR": str(JUPYTER_RUNTIME_DIR),
+        "JUPYTER_CONFIG_DIR": str(SP_SIGNALPILOT),
     }
 
 
 def is_initialized() -> bool:
-    """Check if SignalPilot has been initialized."""
+    """Check if SignalPilot has been initialized.
+
+    Returns:
+        bool: True if ~/SignalPilotHome exists with required structure
+    """
     return (
-        SIGNALPILOT_HOME.exists()
-        and DEFAULT_VENV_DIR.exists()
-        and (DEFAULT_VENV_DIR / "bin" / "python").exists()
+        SP_HOME.exists()
+        and SP_VENV.exists()
+        and get_venv_python().exists()
     )
-
-
-def get_venv_python() -> Path:
-    """Get the path to the venv Python executable."""
-    return DEFAULT_VENV_DIR / "bin" / "python"
-
-
-def get_venv_bin(name: str) -> Path:
-    """Get the path to a binary in the venv."""
-    return DEFAULT_VENV_DIR / "bin" / name

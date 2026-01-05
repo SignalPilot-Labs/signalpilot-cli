@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SignalPilot CLI (`sp`) is a minimal, self-bootstrapping CLI tool that sets up project workspaces and launches JupyterLab. The tool rivals the UX quality of tools like `uv`, `mise`, and `rustup` with a "install on first run" pattern.
+SignalPilot CLI (`sp`) is a self-bootstrapping CLI tool that creates a global workspace for Jupyter-powered data analysis with built-in AI agent support. It follows the **Config SPEC** architecture with a single `~/SignalPilotHome/` workspace containing user and team workspaces.
 
 **User journey:**
 ```bash
@@ -14,8 +14,7 @@ brew install uv
 # 2. Self-bootstrap SignalPilot (one-time)
 uvx sp-cli activate
 
-# 3. Initialize a project
-cd ~/my-project
+# 3. Initialize workspace
 sp init
 
 # 4. Launch JupyterLab
@@ -35,8 +34,9 @@ uv venv .venv && uv pip install -e ".[dev]"
 # Run CLI commands
 .venv/bin/sp --help
 .venv/bin/sp activate          # Test self-bootstrap (uses dev install)
-.venv/bin/sp init              # Test project initialization
+.venv/bin/sp init              # Test workspace initialization
 .venv/bin/sp lab --no-browser  # Test Jupyter Lab launch
+.venv/bin/sp lab --team        # Test team workspace
 .venv/bin/sp install           # Test repair/reinstall
 .venv/bin/sp upgrade           # Test upgrade mechanism
 
@@ -81,53 +81,75 @@ docker-compose down -v
 ### Repository Structure
 ```
 sp-cli/
-├── pyproject.toml          # Package definition
-├── tests/                  # Test suite
-│   └── test_cli.py
+├── Dockerfile                  # Docker testing image
+├── docker-compose.yml          # Docker compose config
+├── docker-test.sh              # Docker test helper
+├── pyproject.toml              # Package definition
+├── tests/                      # Test suite
+│   ├── test_cli.py
+│   ├── test_activate.py
+│   ├── test_init.py
+│   ├── test_lab.py
+│   ├── test_install.py
+│   └── test_upgrade.py
 └── sp/
     ├── __init__.py
-    ├── main.py             # Typer CLI entry point
-    ├── config.py           # Paths and constants
+    ├── main.py                 # Typer CLI entry point
+    ├── config.py               # Config SPEC constants
     ├── commands/
-    │   ├── activate.py     # sp activate - self-bootstrap
-    │   ├── init.py         # sp init - project setup
-    │   ├── lab.py          # sp lab - launch Jupyter
-    │   ├── install.py      # sp install - repair/reinstall
-    │   └── upgrade.py      # sp upgrade - update CLI
+    │   ├── activate.py         # sp activate
+    │   ├── init.py             # sp init
+    │   ├── lab.py              # sp lab
+    │   ├── install.py          # sp install
+    │   └── upgrade.py          # sp upgrade
     ├── core/
-    │   ├── environment.py  # uv/venv management
-    │   ├── jupyter.py      # Kernel registration, launch
-    │   └── project.py      # Project detection logic
+    │   ├── environment.py      # uv/venv management
+    │   └── jupyter.py          # JupyterLab launch
     └── ui/
-        └── console.py      # Rich console, branded output
+        └── console.py          # Rich console, branded output
 ```
 
-### Global Installation Structure
-Created at `~/SignalPilotHome/` by `sp activate`:
+### Global Workspace Structure (Config SPEC)
+Created at `~/SignalPilotHome/` by `sp init`:
 ```
 ~/SignalPilotHome/
-├── bin/
-│   └── sp                  # CLI wrapper script (added to PATH)
-├── .venv/                  # CLI's Python environment
 ├── .signalpilot/
-│   └── config.toml         # Global configuration
-└── cache/                  # CLI cache and metadata
-```
-
-### Project Structure
-Created by `sp init` in any directory:
-```
-my-project/
-├── .venv/                  # Project Python environment
-├── .signalpilot/
-│   └── config.toml         # Project configuration (blank template)
-├── custom-skills/          # Project-specific skills
-│   └── .keep
-├── custom-rules/           # Project-specific rules
-│   └── .keep
-├── notebooks/              # User notebooks (optional)
-├── data/                   # User data (optional)
-└── .gitignore              # Updated with .venv, .env rules
+│   ├── defaults/                       # Shipped defaults (updated on upgrade)
+│   │   ├── sp-core.toml
+│   │   ├── jupyter_server_config.py
+│   │   └── cli.toml
+│   ├── user-sp-core.toml               # User overrides
+│   ├── user-jupyter_server_config.py
+│   └── user-cli.toml
+├── default-skills/                     # Built-in agent skills
+│   └── sql-optimization/SKILL.md
+├── default-rules/                      # Built-in agent rules
+│   ├── analyze.md
+│   ├── explain.md
+│   └── investigate.md
+├── connect/                            # Credentials (NEVER agent-accessible)
+│   ├── db.toml
+│   ├── mcp.json
+│   ├── .env
+│   └── folders/manifest.toml
+├── system/                             # Installation metadata
+│   ├── version.toml
+│   ├── logs/
+│   └── migrations/
+├── .venv/                              # Shared Python environment
+├── pyproject.toml                      # Shared dependencies
+├── user-workspace/                     # ═══ AGENT WORKSPACE (personal) ═══
+│   ├── demo-project/
+│   │   └── demo-quickstart.ipynb
+│   ├── skills/
+│   │   └── skill-upload-registry.json
+│   └── rules/
+└── team-workspace/                     # ═══ AGENT WORKSPACE (team) ═══
+    ├── notebooks/
+    ├── scripts/
+    ├── skills/
+    │   └── skill-upload-registry.json
+    └── rules/
 ```
 
 ## Key Technical Details
@@ -137,31 +159,48 @@ my-project/
 - `rich>=13.0.0` - Beautiful terminal output
 - `pytest>=8.0.0` - Testing (dev dependency)
 
+### Environment Variables for Jupyter
+SignalPilot only customizes the Jupyter config directory:
+```python
+JUPYTER_CONFIG_DIR=~/SignalPilotHome/.signalpilot
+```
+
+All other Jupyter directories (data, runtime, kernels) use defaults in the `.venv`.
+
 ## Key Architecture Decisions
+
+### Config SPEC Architecture
+- **Global workspace**: Single `~/SignalPilotHome/` for all work
+- **User workspace**: Personal notebooks and scripts (`user-workspace/`)
+- **Team workspace**: Collaborative, git-tracked work (`team-workspace/`)
+- **Agent containment**: Allowlist-based filesystem access
+- **Credential isolation**: `connect/` directory NEVER accessible to agents
 
 ### Self-Bootstrapping Installation
 - Primary installation: `uvx sp-cli activate` (no curl|sh needed)
 - Users install `uv` via trusted package managers (brew, winget, cargo)
-- `sp activate` installs itself to `~/SignalPilotHome/` and adds to PATH
+- `sp activate` creates wrapper script at `~/.local/bin/sp`
 - More trustworthy than `curl | sh` patterns
 
-### Project-Level Isolation
-- Each project gets its own `.venv` and configuration
-- No shared global workspace - projects are independent and portable
-- Smart detection: `sp lab` finds `.signalpilot/` in current or parent directories
-- Benefits: reproducibility, no dependency conflicts, easy to version control
-
 ### Five Core Commands
-1. **`sp activate`** - Self-bootstrap system installation (run via `uvx`)
-2. **`sp init`** - Initialize current directory as project
-3. **`sp lab`** - Launch Jupyter Lab with smart project detection
-4. **`sp install`** - Repair/reinstall system (with `--force` flag)
+1. **`sp activate`** - Self-bootstrap (run via `uvx sp-cli activate`)
+2. **`sp init`** - Initialize ~/SignalPilotHome/ workspace
+3. **`sp lab`** - Launch Jupyter Lab from user or team workspace
+4. **`sp install`** - Repair/reinstall workspace (with `--force` flag)
 5. **`sp upgrade`** - Upgrade CLI to latest version
 
-### Configuration Pattern
-- Global config: `~/SignalPilotHome/.signalpilot/config.toml`
-- Project config: `./.signalpilot/config.toml`
-- Both use same `.signalpilot/` folder pattern for consistency
+### Agent Containment
+**Agent-Accessible (allowlist):**
+- ✅ `user-workspace/` (full access)
+- ✅ `team-workspace/` (full access)
+- ✅ `default-skills/` (read-only)
+- ✅ `default-rules/` (read-only)
+
+**Agent-Inaccessible (blocklist):**
+- ❌ `connect/` (credentials, API keys)
+- ❌ `.signalpilot/` (system configuration)
+- ❌ `system/` (installation metadata)
+- ❌ `.venv/` (Python environment)
 
 ### Brand Colors (for Rich styling)
 ```python
@@ -178,42 +217,41 @@ BRAND_MUTED = "#6B7280"      # Gray
 - Success: prefix with ✓ in BRAND_SUCCESS
 - Error: prefix with ✗ in BRAND_ERROR
 - Info: prefix with → in BRAND_MUTED
-- Always print working directory when launching `sp lab`
-- Display branded panels for major operations (`sp activate`, `sp init`)
+- Display branded panels for major operations (`sp init`)
 
 ## Command Implementation Details
 
 ### `sp activate` (Self-Bootstrap)
-- Detects if running via `uvx` (temp environment)
-- Creates `~/SignalPilotHome/` structure
-- Installs `sp` to `~/SignalPilotHome/bin/sp`
-- Adds to PATH in shell rc files (.bashrc, .zshrc, .profile)
-- Uses `uv` for Python environment management
+- **MUST** be run via `uvx sp-cli activate` (not as `sp activate`)
+- Detects if running in uvx temp environment
+- Creates `~/.local/bin/sp` wrapper script
+- Adds `~/.local/bin` to PATH in shell rc files (.bashrc, .zshrc)
+- Does NOT create `~/SignalPilotHome/` (that's done by `sp init`)
 
-### `sp init` (Project Setup)
-- Idempotent - safe to run multiple times
-- Creates `.venv/` if doesn't exist (Python 3.12+)
-- Creates `.signalpilot/config.toml` (blank template)
-- Creates `custom-skills/` and `custom-rules/` with `.keep` files
-- Updates `.gitignore` with appropriate rules
+### `sp init` (Workspace Setup)
+- **Idempotent** - safe to run multiple times
+- Creates full `~/SignalPilotHome/` directory structure
+- Creates `.venv/` with Python 3.12
+- Installs core packages: `jupyterlab`, `ipykernel`, `pandas`, `numpy`
+- Creates default config files
+- Creates skill and rule registries
+- Creates demo notebook in `user-workspace/demo-project/`
 
-### `sp lab` (Smart Launcher)
-- Walks up directory tree to find `.signalpilot/`
-- Prints working directory and Python environment being used
-- Supports `--port` flag for custom port (default: 8888)
-- Supports `--no-browser` flag
-- Falls back to current directory if no `.signalpilot/` found
+### `sp lab` (Workspace Launcher)
+- Launches Jupyter Lab from `user-workspace/` (default) or `team-workspace/`
+- Usage: `sp lab [--team] [--port=8888] [--no-browser]`
+- Sets `JUPYTER_CONFIG_DIR` to `~/SignalPilotHome/.signalpilot/`
+- Uses shared `.venv` at `~/SignalPilotHome/.venv`
 
 ### `sp install` (Repair)
-- Verifies `~/SignalPilotHome/` installation
-- Reinstalls CLI dependencies
-- With `--force`: prompts for confirmation, then full reset
+- **Repair mode** (default): Reinstalls core packages, fixes broken dependencies
+- **Force mode** (`--force`): Deletes `~/SignalPilotHome/` with confirmation prompt
 
 ### `sp upgrade` (Update)
-- Fetches latest version from PyPI
-- Shows changelog
+- Checks PyPI for latest version
+- Shows current vs latest version
 - Prompts for confirmation
-- Installs via `uv`
+- Upgrades via `uv tool upgrade sp-cli`
 
 ## Development Workflow
 
@@ -224,18 +262,18 @@ When implementing commands:
 4. Always provide helpful error messages with next steps
 5. Make operations idempotent where possible
 6. Print clear output about what's happening
+7. Use constants from `sp.config` module
 
 ## Testing
 
 Test scenarios to cover:
 - Clean installation (no existing `~/SignalPilotHome/`)
 - Existing installation (idempotent behavior)
-- Project detection (with and without `.signalpilot/`)
-- Multiple projects in different directories
+- User vs team workspace selection (via `--team` flag)
 - Error cases (no uv, wrong Python version, permission issues)
+- Docker testing for clean environment
 
 ## Future Work (v1.1+)
-- `sp doctor` - Health check and troubleshooting command
-- Chat history integration (V1.5: auto-attach to notebooks)
-- VS Code extension integration for skills/rules management
-- R language support (see SPEC-R-SUPPORT.md if it exists)
+- R language support (see SPEC-R-SUPPORT.md)
+- Multiple environment management
+- MCP server configuration
