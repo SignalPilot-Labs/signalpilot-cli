@@ -2,13 +2,9 @@
 
 import typer
 
+from sp.commands.activate import activate
 from sp.commands.init import init
 from sp.commands.lab import lab
-
-# TODO: Add new commands in Phase 3
-# from sp.commands.activate import activate
-# from sp.commands.install import install
-# from sp.commands.upgrade import upgrade
 
 app = typer.Typer(
     name="sp",
@@ -17,12 +13,9 @@ app = typer.Typer(
 )
 
 # Register commands
-# TODO: Uncomment when commands are implemented in Phase 3
-# app.command()(activate)
+app.command()(activate)
 app.command()(init)
 app.command()(lab)
-# app.command()(install)
-# app.command()(upgrade)
 
 
 @app.callback()

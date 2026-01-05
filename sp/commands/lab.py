@@ -1,58 +1,53 @@
-"""sp lab - Launch JupyterLab."""
+"""sp lab - Launch JupyterLab from workspace."""
 
-from pathlib import Path
 from typing import Annotated
 
 import typer
 
 from sp import config
 from sp.core import jupyter
-from sp.ui import console, error, info, muted
+from sp.ui import error, info
 
 
 def lab(
+    team: Annotated[
+        bool,
+        typer.Option("--team", help="Launch in team workspace (default: user workspace)"),
+    ] = False,
     port: Annotated[
         int,
-        typer.Option("--port", "-p", help="Port number"),
+        typer.Option("--port", help="Port number"),
     ] = 8888,
-    dir: Annotated[
-        Path | None,
-        typer.Option("--dir", "-d", help="Notebook directory"),
-    ] = None,
     no_browser: Annotated[
         bool,
         typer.Option("--no-browser", help="Don't open browser automatically"),
     ] = False,
 ) -> None:
-    """Launch JupyterLab with the SignalPilot environment."""
+    """Launch Jupyter Lab from user workspace or team workspace.
+
+    By default, launches from user-workspace (personal work).
+    Use --team to launch from team-workspace (collaborative work).
+    """
     # Check if initialized
     if not config.is_initialized():
-        error("SignalPilot is not initialized.")
-        info("Run 'sp init' first to set up your workspace.")
+        error("SignalPilot not initialized. Run: uvx sp-cli activate")
         raise typer.Exit(1)
 
-    # Default to SignalPilot notebooks directory
-    notebook_dir = dir if dir else config.NOTEBOOKS_DIR
+    # Determine workspace
+    workspace = config.SP_TEAM_WORKSPACE if team else config.SP_USER_WORKSPACE
+    workspace_name = "team-workspace" if team else "user-workspace"
 
-    # Check if port is already in use
-    if jupyter.check_jupyter_running(port):
-        error(f"Port {port} is already in use.")
-        info(f"Try a different port: sp lab --port {port + 1}")
-        raise typer.Exit(1)
-
-    # Display connection info
+    # Display info
     print()
-    console.print(f"  [bold]●[/] Environment: default")
-    console.print(f"  [bold]●[/] Notebooks:   {notebook_dir}")
-    console.print(f"  [bold]●[/] URL:         http://localhost:{port}")
-    print()
-    info("Starting JupyterLab... (Ctrl+C to stop)")
+    info(f"Starting Jupyter Lab in ~/SignalPilotHome/{workspace_name}")
+    info(f"Using environment: ~/SignalPilotHome/.venv")
+    info(f"Access at: http://localhost:{port}")
     print()
 
     # Launch JupyterLab (blocks until user exits)
     exit_code = jupyter.launch_jupyterlab(
+        workspace=workspace,
         port=port,
-        notebook_dir=notebook_dir,
         no_browser=no_browser,
     )
 
