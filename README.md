@@ -1,17 +1,17 @@
-# SignalPilot CLI (`sp-cli`)
+# SignalPilot CLI
 
 Your Trusted CoPilot for Data Analysis - A simple CLI tool to bootstrap Jupyter-powered data science workspaces with AI agent support.
 
 ## Features
 
 - 🚀 **One-command setup** - Get from zero to Jupyter Lab in under 3 minutes
-- 🐍 **Python 3.12** - Uses the latest Python with uv for fast package management
+- ⚡  **Python 3.12** - Uses the latest Python with uv for fast package management
 - 📊 **Pre-configured workspace** - Includes pandas, numpy, matplotlib, seaborn, plotly
 - 🤖 **AI-ready** - Built-in SignalPilot AI agent support
 - ⚡ **Fast** - Optimized Jupyter cache for quick startups
-- 🎨 **Beautiful CLI** - Clean, colorful terminal output
+- �� **Beautiful CLI** - Clean, colorful terminal output
 
-## Installation
+## Quick Start
 
 ```bash
 # Install uv (if you don't have it)
@@ -19,8 +19,8 @@ brew install uv  # macOS
 # OR
 curl -LsSf https://astral.sh/uv/install.sh | sh  # Linux/macOS
 
-# Run SignalPilot init
-uvx sp-cli
+# Run SignalPilot init (no installation needed!)
+uvx signalpilot init
 ```
 
 That's it! The tool will:
@@ -28,11 +28,11 @@ That's it! The tool will:
 2. Download starter notebook and dependencies
 3. Set up Python 3.12 virtual environment
 4. Install Jupyter Lab and data science packages
-5. Optimize for fast startup
+5. Optimize Jupyter cache for fast startup
 
 ## Usage
 
-After running `uvx sp-cli`, follow the next steps:
+After running `sp init`, follow the next steps:
 
 ```bash
 cd ~/SignalPilotHome && source .venv/bin/activate
@@ -64,6 +64,25 @@ jupyter lab
 - Python 3.10 or higher
 - [uv](https://docs.astral.sh/uv/) package manager
 
+## Permanent Installation Options (Not Recommended)
+
+### Option 1: Consider Running with uvx (Recommended - no installation needed)
+```bash
+uvx signalpilot init
+```
+
+### Option 2: Install with uv
+```bash
+uv tool install signalpilot
+sp init
+```
+
+### Option 3: Install with pip
+```bash
+pip install signalpilot
+sp init
+```
+
 ## License
 
 MIT License - See LICENSE file for details
@@ -72,4 +91,4 @@ MIT License - See LICENSE file for details
 
 - [Homepage](https://signalpilot.ai)
 - [Documentation](https://docs.signalpilot.ai)
-- [GitHub](https://github.com/SignalPilot-Labs/sp-cli)
+- [GitHub](https://github.com/SignalPilot-Labs/signalpilot-cli)

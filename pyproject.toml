@@ -1,6 +1,6 @@
 [project]
-name = "sp-cli"
-version = "0.2.0"
+name = "signalpilot"
+version = "0.3.1"
 description = "SignalPilot CLI - Your Trusted CoPilot for Data Analysis"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -18,6 +18,9 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Framework :: Jupyter",
+    "Framework :: Jupyter :: JupyterLab",
+    "Framework :: Jupyter :: JupyterLab :: 4",
     "Topic :: Scientific/Engineering",
     "Topic :: Software Development",
 ]
@@ -27,11 +30,12 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://signalpilot.dev"
-Repository = "https://github.com/SignalPilot-Labs/sp-cli"
-Documentation = "https://signalpilot.dev/docs"
+Homepage = "https://signalpilot.ai"
+Repository = "https://github.com/SignalPilot-Labs/signalpilot-cli"
+Documentation = "https://signalpilot.ai/docs"
 
 [project.scripts]
+signalpilot = "sp.main:app"
 sp = "sp.main:app"
 
 [build-system]
