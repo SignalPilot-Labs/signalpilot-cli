@@ -1,12 +1,35 @@
 [project]
-name = "signalpilot-cli"
-version = "0.1.0"
+name = "sp-cli"
+version = "0.2.0"
 description = "SignalPilot CLI - Your Trusted CoPilot for Data Analysis"
+readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "SignalPilot Inc.", email = "info@signalpilot.ai"}
+]
+keywords = ["jupyter", "data-analysis", "notebook", "ai", "copilot"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development",
+]
 dependencies = [
     "typer>=0.12.0",
     "rich>=13.0.0",
 ]
+
+[project.urls]
+Homepage = "https://signalpilot.dev"
+Repository = "https://github.com/SignalPilot-Labs/sp-cli"
+Documentation = "https://signalpilot.dev/docs"
 
 [project.scripts]
 sp = "sp.main:app"
