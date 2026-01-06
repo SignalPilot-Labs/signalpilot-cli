@@ -13,20 +13,31 @@ from sp.ui import error
 
 def launch_jupyterlab(
     workspace: Path,
-    port: int = 8888,
-    no_browser: bool = False,
+    config_dir: Path | None = None,
+    venv_path: Path | None = None,
+    extra_args: list[str] | None = None,
 ) -> int:
     """Launch Jupyter Lab from specified workspace.
 
     Args:
-        workspace: Workspace directory to launch from (user-workspace or team-workspace)
-        port: Port to run on (default: 8888)
-        no_browser: If True, don't open browser automatically (default: False)
+        workspace: Workspace directory to launch from
+        config_dir: Optional custom config directory (for project mode)
+        venv_path: Optional custom venv path (for project mode)
+        extra_args: Additional arguments to pass to jupyter lab
 
     Returns:
         int: Exit code from Jupyter process
     """
-    jupyter = config.get_venv_bin("jupyter")
+    if extra_args is None:
+        extra_args = []
+    # Get jupyter binary (from custom venv or global SignalPilotHome venv)
+    if venv_path:
+        # Project mode: use local .venv
+        jupyter = venv_path / "bin" / "jupyter"
+    else:
+        # Global mode: use SignalPilotHome .venv
+        jupyter = config.get_venv_bin("jupyter")
+
     if not jupyter.exists():
         error("JupyterLab not found. Run 'sp init' first.")
         return 1
@@ -41,17 +52,24 @@ def launch_jupyterlab(
     cmd = [
         str(jupyter),
         "lab",
-        f"--port={port}",
         f"--notebook-dir={workspace}",
     ]
 
-    if no_browser:
-        cmd.append("--no-browser")
+    # Add any extra arguments passed by user
+    cmd.extend(extra_args)
 
-    # Set Jupyter environment (only JUPYTER_CONFIG_DIR)
+    # Set Jupyter environment
     import os
     env = os.environ.copy()
-    env.update(config.get_jupyter_env())
+
+    # Always use ~/SignalPilotHome/.signalpilot/ for global installs
+    # Follow Jupyter config precedence: JUPYTER_CONFIG_PATH (defaults), then JUPYTER_CONFIG_DIR (user overrides)
+    if config_dir:
+        # Project mode: use local .signalpilot/
+        env["JUPYTER_CONFIG_DIR"] = str(config_dir)
+    else:
+        # Global mode: use ~/SignalPilotHome/.signalpilot/
+        env.update(config.get_jupyter_env())
 
     # Handle signals gracefully
     def signal_handler(signum: int, frame: object) -> None:

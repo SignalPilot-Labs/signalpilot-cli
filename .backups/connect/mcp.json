@@ -1,0 +1,24 @@
+{
+  "$schema": "https://signalpilot.dev/schemas/mcp.json",
+  "mcpServers": {
+    "_comment": "MCP (Model Context Protocol) server configurations",
+    "_example_github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "_disabled": true
+    },
+    "_example_filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/allowed/directory"],
+      "_disabled": true
+    },
+    "_example_postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://user:pass@localhost/db"],
+      "_disabled": true
+    }
+  }
+}

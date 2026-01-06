@@ -1,0 +1,23 @@
+# Folder Access Manifest
+# Defines which external folders the agent can access
+# This provides controlled filesystem access outside the workspace
+
+# Example configurations (uncomment and modify as needed)
+
+# [[folders]]
+# name = "shared_data"
+# path = "/mnt/shared/data"
+# permissions = "read"
+# description = "Shared team data directory"
+
+# [[folders]]
+# name = "reports_output"
+# path = "/mnt/reports"
+# permissions = "read-write"
+# description = "Output directory for generated reports"
+
+# [[folders]]
+# name = "archive"
+# path = "/mnt/archive"
+# permissions = "read"
+# description = "Historical data archive (read-only)"

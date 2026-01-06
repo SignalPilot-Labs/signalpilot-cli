@@ -1,16 +1,13 @@
 # SignalPilot CLI - Development & Testing Docker Image
 FROM python:3.12-slim
 
-# Install system dependencies
+# Install system dependencies including uv via pip
 RUN apt-get update && apt-get install -y \
     curl \
     git \
     build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install uv (Python package manager)
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:${PATH}"
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir uv
 
 # Create working directory
 WORKDIR /workspace
@@ -20,8 +17,7 @@ COPY . /app/sp-cli
 
 # Install sp-cli in development mode
 WORKDIR /app/sp-cli
-RUN uv venv .venv && \
-    .venv/bin/pip install -e ".[dev]"
+RUN uv venv .venv && uv pip install -e ".[dev]"
 
 # Add sp to PATH for easy access
 ENV PATH="/app/sp-cli/.venv/bin:${PATH}"

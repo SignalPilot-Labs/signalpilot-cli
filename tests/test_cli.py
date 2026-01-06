@@ -21,16 +21,17 @@ class TestConfig:
 
     def test_paths_are_pathlib(self):
         """All path configs should be Path objects."""
-        assert isinstance(config.SIGNALPILOT_HOME, Path)
-        assert isinstance(config.DEFAULT_VENV_DIR, Path)
-        assert isinstance(config.NOTEBOOKS_DIR, Path)
+        assert isinstance(config.SP_HOME, Path)
+        assert isinstance(config.SP_VENV, Path)
+        assert isinstance(config.SP_USER_WORKSPACE, Path)
+        assert isinstance(config.SP_TEAM_WORKSPACE, Path)
 
     def test_jupyter_env_vars(self):
         """Jupyter env vars should be set correctly."""
         env = config.get_jupyter_env()
         assert "JUPYTER_CONFIG_DIR" in env
-        assert "JUPYTER_DATA_DIR" in env
-        assert "JUPYTER_RUNTIME_DIR" in env
+        assert "JUPYTER_CONFIG_PATH" in env
+        # Config SPEC: defaults loaded first, then user overrides
 
     def test_packages_defined(self):
         """Package lists should be non-empty."""
@@ -56,15 +57,10 @@ class TestEnvironment:
 class TestJupyter:
     """Test jupyter module."""
 
-    def test_get_registered_kernels(self):
-        """Should return list of kernels."""
-        kernels = jupyter.get_registered_kernels()
-        assert isinstance(kernels, list)
-
-    def test_check_jupyter_running(self):
-        """Should return boolean for jupyter status."""
-        result = jupyter.check_jupyter_running(port=19998)  # Unlikely port
-        assert result is False
+    def test_launch_jupyterlab_exists(self):
+        """Should have launch_jupyterlab function."""
+        assert hasattr(jupyter, "launch_jupyterlab")
+        assert callable(jupyter.launch_jupyterlab)
 
 
 class TestCLI:
@@ -80,22 +76,28 @@ class TestCLI:
         """sp init --help should work."""
         result = runner.invoke(app, ["init", "--help"])
         assert result.exit_code == 0
-        assert "--python" in result.stdout
-        assert "--minimal" in result.stdout
+        assert "--local" in result.stdout
 
     def test_lab_help(self):
         """sp lab --help should work."""
         result = runner.invoke(app, ["lab", "--help"])
         assert result.exit_code == 0
-        assert "--port" in result.stdout
-        assert "--no-browser" in result.stdout
+        assert "--team" in result.stdout
+        assert "Jupyter Lab" in result.stdout
 
-    def test_status_runs(self):
-        """sp status should run without error."""
-        result = runner.invoke(app, ["status"])
+    def test_install_help(self):
+        """sp install --help should work."""
+        result = runner.invoke(app, ["install", "--help"])
         assert result.exit_code == 0
-        assert "Home" in result.stdout
-        assert "Environment" in result.stdout
+        assert "--repair" in result.stdout
+        assert "--force" in result.stdout
+
+    def test_upgrade_help(self):
+        """sp upgrade --help should work."""
+        result = runner.invoke(app, ["upgrade", "--help"])
+        assert result.exit_code == 0
+        assert "SignalPilot CLI" in result.stdout
+        assert "AI library" in result.stdout
 
 
 class TestUI:

@@ -157,13 +157,17 @@ def get_venv_bin(name: str) -> Path:
 def get_jupyter_env() -> dict[str, str]:
     """Get environment variables for Jupyter.
 
-    Only customizes JUPYTER_CONFIG_DIR to point to ~/SignalPilotHome/.signalpilot/.
+    Sets up Jupyter config path following standard Jupyter convention:
+    - JUPYTER_CONFIG_PATH: defaults directory (loaded first)
+    - JUPYTER_CONFIG_DIR: main .signalpilot directory (loaded last, user overrides)
+
     Other Jupyter directories (data, runtime, kernels) use defaults in .venv.
 
     Returns:
         dict: Environment variables to set when launching Jupyter
     """
     return {
+        "JUPYTER_CONFIG_PATH": str(SP_CONFIG_DEFAULTS),
         "JUPYTER_CONFIG_DIR": str(SP_SIGNALPILOT),
     }
 

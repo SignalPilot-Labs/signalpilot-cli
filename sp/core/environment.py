@@ -198,31 +198,6 @@ def install_packages(
     return True
 
 
-def get_installed_packages(venv_path: Path = config.SP_VENV) -> list[str]:
-    """Get list of installed packages in a venv.
-
-    Args:
-        venv_path: Path to the virtual environment (default: ~/SignalPilotHome/.venv)
-
-    Returns:
-        list[str]: List of installed package names
-    """
-    uv = get_uv_path()
-    result = subprocess.run(
-        [uv, "pip", "list", "--python", str(venv_path), "--format", "freeze"],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        return []
-
-    packages = []
-    for line in result.stdout.strip().split("\n"):
-        if "==" in line:
-            packages.append(line.split("==")[0])
-    return packages
-
-
 def get_python_version(venv_path: Path = config.SP_VENV) -> str | None:
     """Get the Python version of a venv.
 

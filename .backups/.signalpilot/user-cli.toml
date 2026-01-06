@@ -1,0 +1,17 @@
+# SignalPilot CLI Configuration (User Overrides)
+# This file allows you to override default CLI settings.
+# Only include settings you want to change from defaults.
+# See defaults/cli.toml for all available options.
+
+# Example overrides (uncomment and modify as needed):
+
+# [cli]
+# check_updates = false  # Disable update checks
+# update_check_interval = 168  # Check weekly instead of daily
+
+# [workspace]
+# default_mode = "team"  # Default to team workspace
+
+# [features]
+# experimental = true  # Enable experimental features
+# telemetry = false  # Disable telemetry
