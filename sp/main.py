@@ -174,7 +174,7 @@ def run_init(dev: bool = False):
         download_pyproject = response.lower() in ["y", "yes"]
 
     # Download files from GitHub
-    base_url = "https://raw.githubusercontent.com/SignalPilot-Labs/signalpilot-cli/main/defaultSignalPilotHome/"
+    base_url = "https://raw.githubusercontent.com/SignalPilot-Labs/signalpilot-cli/refs/heads/main/defaultSignalPilotHome/"
 
     console.print("\n→ Downloading workspace files...", style="dim")
 

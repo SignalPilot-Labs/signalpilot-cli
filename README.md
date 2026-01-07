@@ -80,6 +80,7 @@ uvx signalpilot lab
 uvx signalpilot lab --here
 
 # Open in current folder using local .venv
+# MUST have a .venv in the current directory w/ jupyterlab and signalpilot-ai installed
 uvx signalpilot lab --project
 ```
 
