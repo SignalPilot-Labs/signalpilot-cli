@@ -1,567 +1,147 @@
 # SignalPilot CLI
 
-<p align="center">
-  <strong>Your Trusted CoPilot for Data Analysis</strong>
-</p>
+Your Trusted CoPilot for Data Analysis - A simple CLI tool to bootstrap Jupyter-powered data science workspaces with AI agent support.
 
-<p align="center">
-  A minimal, beautiful CLI tool that initializes a SignalPilot workspace and launches JupyterLab.
-</p>
+## Features
 
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [System Requirements](#system-requirements)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Command Reference](#command-reference)
-  - [sp init](#sp-init)
-  - [sp lab](#sp-lab)
-  - [sp status](#sp-status)
-- [Workspace Structure](#workspace-structure)
-- [Common Workflows](#common-workflows)
-- [Configuration](#configuration)
-- [Troubleshooting](#troubleshooting)
-- [FAQ](#faq)
-- [Development](#development)
-- [License](#license)
-
----
-
-## Overview
-
-SignalPilot CLI (`sp`) provides a streamlined way to set up and manage your data analysis environment. With just two commands, you can go from zero to a fully configured JupyterLab environment with all the tools you need for data analysis.
-
-**Key Features:**
-- One-command installation via `curl | sh`
-- Isolated Python environment powered by [uv](https://docs.astral.sh/uv/)
-- Pre-configured JupyterLab with optimized settings
-- Data science packages ready out of the box
-- Beautiful, informative terminal output
-
----
-
-## System Requirements
-
-| Requirement | Details |
-|-------------|---------|
-| **OS** | macOS, Linux, or Windows (WSL) |
-| **Shell** | bash or zsh |
-| **Tools** | `curl` (pre-installed on most systems) |
-| **Disk Space** | ~500MB for full installation |
-
-> **Note:** Python is installed automatically via `uv`. You don't need Python pre-installed.
-
----
-
-## Installation
-
-### Quick Install (Recommended)
-
-```bash
-curl -sSf https://get.signalpilot.dev | sh
-```
-
-After installation, restart your terminal or run:
-
-```bash
-export PATH="${HOME}/.signalpilot/bin:${PATH}"
-```
-
-### What the Installer Does
-
-1. Installs [uv](https://docs.astral.sh/uv/) (Python package manager) if not present
-2. Creates an isolated environment at `~/.signalpilot/venv`
-3. Installs the `signalpilot-cli` package
-4. Adds `sp` command to your PATH
-
-### Manual Installation
-
-If you prefer to install manually or the quick install doesn't work:
-
-```bash
-# 1. Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# 2. Create environment and install
-uv tool install signalpilot-cli
-```
-
-### Verify Installation
-
-```bash
-sp --help
-```
-
-You should see the SignalPilot CLI help message.
-
----
+- 🚀 **One-command setup** - Get from zero to Jupyter Lab in under 3 minutes
+- ⚡  **Python 3.12** - Uses the latest Python with uv for fast package management
+- 📊 **Pre-configured workspace** - Includes pandas, numpy, matplotlib, seaborn, plotly
+- 🤖 **AI-ready** - Built-in SignalPilot AI agent support
+- ⚡ **Fast** - Optimized Jupyter cache for quick startups
+- ✨ **Beautiful CLI** - Clean, colorful terminal output
 
 ## Quick Start
 
-Get up and running in 30 seconds:
-
 ```bash
-# Step 1: Initialize your workspace
-sp init
-
-# Step 2: Launch JupyterLab
-sp lab
+# No uv installed: curl -LsSf https://astral.sh/uv/install.sh | sh
+uvx signalpilot      # Initialize workspace and starts Jupyter Lab
 ```
-
-That's it! JupyterLab will open in your browser at http://localhost:8888.
-
----
-
-## Command Reference
-
-### `sp init`
-
-Initialize SignalPilot workspace and default environment.
-
-```
-Usage: sp init [OPTIONS]
-
-Options:
-  -p, --python TEXT    Python version to use [default: 3.12]
-  --minimal            Install only core packages (skip data science extras)
-  --skip-warmup        Skip Jupyter cache warmup
-  --help               Show this message and exit
-```
-
-#### Examples
-
+**OR Any time later**
 ```bash
-# Full installation with all packages
-sp init
+# Easy way to start
+uvx signalpilot lab  # Start Jupyter Lab in ~/SignalPilotHome
 
-# Minimal installation (faster, smaller)
-sp init --minimal
-
-# Use a specific Python version
-sp init --python 3.11
-
-# Quick init for testing (skip warmup)
-sp init --skip-warmup
-
-# Combine options
-sp init --minimal --python 3.11 --skip-warmup
+# OR manually activate and start
+cd ~/SignalPilotHome && source .venv/bin/activate
+jupyter lab
 ```
 
-#### What Gets Installed
+**What happens:**
+- Creates `~/SignalPilotHome` workspace with starter notebooks
+- Sets up Python 3.12 + Jupyter Lab + data packages (pandas, numpy, matplotlib, plotly)
+- Optimizes for fast startup
+- Launches Jupyter Lab in your default browser
 
-**Core packages** (always installed):
-| Package | Description |
-|---------|-------------|
-| `jupyterlab` | Interactive development environment |
-| `ipykernel` | Jupyter kernel for Python |
-| `pandas` | Data manipulation and analysis |
-| `numpy` | Numerical computing |
+**Why uv?**
+- **10-100x faster** than pip/conda for package installation
+- **SignalPilot Kernel runs on it** - native integration
+- Modern Python package management
 
-**Data science packages** (unless `--minimal`):
-| Package | Description |
-|---------|-------------|
-| `matplotlib` | Plotting and visualization |
-| `seaborn` | Statistical data visualization |
-| `scikit-learn` | Machine learning library |
-
-**SignalPilot packages**:
-| Package | Description |
-|---------|-------------|
-| `signalpilot-ai` | SignalPilot AI assistant |
-
-#### Output Example
-
-```
-╭──────────────────────────────────────────────────────────────╮
-│                                                              │
-│   SignalPilot                                                │
-│   Your Trusted CoPilot for Data Analysis                     │
-│                                                              │
-╰──────────────────────────────────────────────────────────────╯
-
-→ Creating SignalPilot home at ~/SignalPilotHome
-✓ Directory structure ready
-✓ Python 3.12 ready
-✓ Virtual environment created
-✓ Installed 8 packages
-✓ Registered kernel: signalpilot
-✓ JupyterLab optimized
-✓ Installation complete!
-
-  Your workspace is at: ~/SignalPilotHome
-
-╭─ Next steps ─────────────────────────────────────────────────╮
-│   sp lab              Launch JupyterLab                      │
-│   sp status           Check installation                     │
-╰──────────────────────────────────────────────────────────────╯
-```
-
----
-
-### `sp lab`
-
-Launch JupyterLab with the SignalPilot environment.
-
-```
-Usage: sp lab [OPTIONS]
-
-Options:
-  -p, --port INTEGER   Port number [default: 8888]
-  -d, --dir PATH       Notebook directory
-  --no-browser         Don't open browser automatically
-  --help               Show this message and exit
-```
-
-#### Examples
-
+**Other ways to install uv:**
 ```bash
-# Launch with defaults (port 8888, opens browser)
-sp lab
+# Linux/macOS (recommended)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Use a custom port
-sp lab --port 9999
-
-# Use a custom notebook directory
-sp lab --dir ~/my-projects
-
-# Don't open browser (useful for remote servers)
-sp lab --no-browser
-
-# Combine options
-sp lab --port 9000 --dir ~/work --no-browser
+# macOS
+brew install uv
 ```
 
-#### Output Example
+## What Gets Installed
 
-```
-  ● Environment: default
-  ● Notebooks:   ~/SignalPilotHome/notebooks
-  ● URL:         http://localhost:8888
+**Python Packages:**
+- `signalpilot-ai` - AI agent integration
+- `jupyterlab` - Modern Jupyter interface
+- `pandas`, `numpy` - Data manipulation
+- `matplotlib`, `seaborn`, `plotly` - Visualization
+- `python-dotenv`, `tomli` - Configuration utilities
 
-→ Starting JupyterLab... (Ctrl+C to stop)
-```
-
-#### Stopping JupyterLab
-
-Press `Ctrl+C` in the terminal to stop JupyterLab.
-
----
-
-### `sp status`
-
-Show SignalPilot installation status.
-
-```
-Usage: sp status [OPTIONS]
-
-Options:
-  --help  Show this message and exit
-```
-
-#### Example
-
-```bash
-sp status
-```
-
-#### Output Example
-
-```
-╭──────────────────────────────────────────────────────────────╮
-│                                                              │
-│   SignalPilot                                                │
-│   Your Trusted CoPilot for Data Analysis                     │
-│                                                              │
-╰──────────────────────────────────────────────────────────────╯
-  Home          ✓   ~/SignalPilotHome
-  Environment   ✓   default (Python 3.12)
-  Kernels       ✓   signalpilot
-  JupyterLab    ○   Not running
-```
-
-#### Status Icons
-
-| Icon | Meaning |
-|------|---------|
-| ✓ | Installed/Ready |
-| ✗ | Not installed/Error |
-| ● | Running |
-| ○ | Not running |
-
----
-
-## Workspace Structure
-
-After running `sp init`, your workspace is created at `~/SignalPilotHome`:
-
+**Directory Structure:**
 ```
 ~/SignalPilotHome/
-├── notebooks/          # Your Jupyter notebooks (default location)
-├── skills/             # SignalPilot skills and templates
-├── connections/        # Database and API connection configs
-├── config/             # Jupyter and application configuration
-└── system/
-    ├── signal_pilot/   # Python virtual environment
-    ├── jupyter/
-    │   ├── runtime/    # Jupyter runtime files
-    │   └── kernels/    # Registered Jupyter kernels
-    ├── logs/           # Application logs
-    └── cache/          # Cache files for faster startup
+├── user-skills/       # Custom agent skills
+├── user-rules/        # Custom agent rules
+├── team-workspace/    # Shared team notebooks
+├── demo-project/      # Example notebooks
+├── pyproject.toml     # Python project config
+├── start-here.ipynb   # Quick start guide
+└── .venv/             # Python environment
 ```
 
-### Directory Purposes
+## Advanced Lab Options
 
-| Directory | Purpose |
-|-----------|---------|
-| `notebooks/` | Store your Jupyter notebooks here. This is the default directory when launching JupyterLab. |
-| `skills/` | SignalPilot skills for automated analysis workflows. |
-| `connections/` | Store connection configurations for databases, APIs, etc. |
-| `config/` | Jupyter configuration files and app settings. |
-| `system/` | Internal system files. Generally, don't modify these manually. |
-
----
-
-## Common Workflows
-
-### Starting Fresh Each Day
+### Working in Different Directories
 
 ```bash
-# Check status
-sp status
+# Default: Open ~/SignalPilotHome w/ default .venv
+uvx signalpilot lab
 
-# Launch JupyterLab
-sp lab
+# Open in current folder using default .venv in ~/SignalPilotHome
+uvx signalpilot lab --here
+
+# Open in current folder using local .venv
+uvx signalpilot lab --project
 ```
 
-### Working on a Specific Project
+**`--here` flag:**
+- Opens Jupyter Lab in your current directory
+- Uses the default environment from `~/SignalPilotHome/.venv`
+- Perfect for quick exploration in any folder
+
+**`--project` flag:**
+- Opens Jupyter Lab in your current directory
+- Uses a local `.venv` in that directory
+- Great for project-specific work with custom dependencies
+- Requires a `.venv` to exist (create with `uv venv --seed --python 3.12`)
+
+### Passing Extra Arguments to Jupyter Lab
+
+You can pass any Jupyter Lab arguments after the command:
 
 ```bash
-# Launch JupyterLab in your project directory
-sp lab --dir ~/projects/my-analysis
+# Custom port
+uvx signalpilot lab --port=8888
+
+# Disable browser auto-open
+uvx signalpilot lab --no-browser
+
+# Combine with directory flags
+uvx signalpilot lab --here --port=8888
+
+# Any jupyter lab flag works
+uvx signalpilot lab --ip=0.0.0.0 --port=9999
 ```
 
-### Running on a Remote Server
+## Requirements
 
+- Python 3.10 or higher
+- [uv](https://docs.astral.sh/uv/) package manager
+
+## Permanent Installation Options (Not Recommended)
+
+### Option 1: Consider Running with uvx (Recommended - no installation needed)
 ```bash
-# Initialize (only needed once)
-sp init
-
-# Launch without opening browser
-sp lab --no-browser --port 8888
-
-# Then SSH tunnel from your local machine:
-# ssh -L 8888:localhost:8888 user@remote-server
+uvx signalpilot
 ```
 
-### Reinstalling/Updating
-
+### Option 2: Install with uv
 ```bash
-# Re-run init to reinstall everything
-sp init
-```
-
-### Minimal Installation for CI/Testing
-
-```bash
-# Fast installation with only essential packages
-sp init --minimal --skip-warmup
-```
-
----
-
-## Configuration
-
-### Environment Variables
-
-SignalPilot sets these environment variables when running Jupyter:
-
-| Variable | Value | Purpose |
-|----------|-------|---------|
-| `JUPYTER_CONFIG_DIR` | `~/SignalPilotHome/config` | Jupyter configuration |
-| `JUPYTER_DATA_DIR` | `~/SignalPilotHome/system/jupyter` | Jupyter data files |
-| `JUPYTER_RUNTIME_DIR` | `~/SignalPilotHome/system/jupyter/runtime` | Runtime files |
-
-### Jupyter Kernel
-
-SignalPilot registers a kernel named `signalpilot` with display name "SignalPilot (Python 3.12)". This kernel is automatically selected when you create new notebooks.
-
----
-
-## Troubleshooting
-
-### "command not found: sp"
-
-Your PATH hasn't been updated. Run:
-
-```bash
-export PATH="${HOME}/.signalpilot/bin:${PATH}"
-```
-
-Then add this line to your `~/.bashrc` or `~/.zshrc` to make it permanent.
-
-### "SignalPilot is not initialized"
-
-Run `sp init` to set up your workspace:
-
-```bash
+uv tool install signalpilot
 sp init
 ```
 
-### Port Already in Use
-
-If port 8888 is busy, use a different port:
-
+### Option 3: Install with pip
 ```bash
-sp lab --port 9999
+pip install signalpilot
+sp init
 ```
-
-### Slow First Launch
-
-The first time JupyterLab starts, it builds caches. Subsequent launches will be faster. You can also run `sp init` without `--skip-warmup` to pre-warm the cache.
-
-### Installation Fails
-
-1. **Check curl is installed:**
-   ```bash
-   curl --version
-   ```
-
-2. **Try manual installation:**
-   ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   source ~/.local/bin/env  # or restart terminal
-   uv tool install signalpilot-cli
-   ```
-
-3. **Check disk space:**
-   Ensure you have at least 500MB free.
-
-### Can't Connect to JupyterLab
-
-1. Check if it's running:
-   ```bash
-   sp status
-   ```
-
-2. Check the URL in your browser matches the port:
-   ```
-   http://localhost:8888
-   ```
-
-3. Try disabling browser auto-open and accessing manually:
-   ```bash
-   sp lab --no-browser
-   ```
-
----
-
-## FAQ
-
-### Where is my data stored?
-
-All your notebooks and data are in `~/SignalPilotHome/notebooks/` by default. This directory is never deleted when you reinstall.
-
-### Can I use my existing Python packages?
-
-SignalPilot uses an isolated virtual environment. To add packages:
-
-```bash
-# Activate the SignalPilot environment
-source ~/SignalPilotHome/system/signal_pilot/bin/activate
-
-# Install packages
-pip install your-package
-
-# Deactivate when done
-deactivate
-```
-
-### Can I use a different Python version?
-
-Yes, specify it during init:
-
-```bash
-sp init --python 3.11
-```
-
-### How do I uninstall?
-
-```bash
-# Remove SignalPilot home (WARNING: deletes all notebooks!)
-rm -rf ~/SignalPilotHome
-
-# Remove CLI installation
-rm -rf ~/.signalpilot
-
-# Remove PATH entry from ~/.bashrc and ~/.zshrc
-```
-
-### Does this work on Windows?
-
-SignalPilot CLI works on Windows through WSL (Windows Subsystem for Linux). Native Windows support is planned for a future release.
-
-### Can I run multiple JupyterLab instances?
-
-Yes, use different ports:
-
-```bash
-# Terminal 1
-sp lab --port 8888
-
-# Terminal 2
-sp lab --port 9999 --dir ~/other-project
-```
-
----
-
-## Development
-
-### Setting Up for Development
-
-```bash
-# Clone the repository
-git clone <repo-url>
-cd sp-cli
-
-# Create venv and install in dev mode
-uv venv .venv && uv pip install -e ".[dev]"
-
-# Run CLI
-.venv/bin/sp --help
-
-# Run tests
-.venv/bin/pytest tests/ -v
-
-# Run single test
-.venv/bin/pytest tests/test_cli.py::TestCLI::test_help -v
-```
-
-### Project Structure
-
-```
-sp-cli/
-├── install.sh              # Shell installer (curl | sh)
-├── pyproject.toml          # Package definition
-├── tests/                  # Test suite
-└── sp/
-    ├── main.py             # CLI entry point
-    ├── config.py           # Paths and constants
-    ├── commands/           # CLI commands
-    ├── core/               # Core functionality
-    └── ui/                 # Terminal UI components
-```
-
----
 
 ## License
 
-Apache 2.0
+MIT License - See LICENSE file for details
 
----
+## Links
 
-<p align="center">
-  <sub>Built with ❤️ for data analysts everywhere</sub>
-</p>
+- [Homepage](https://signalpilot.ai)
+- [Documentation](https://docs.signalpilot.ai)
+- [GitHub](https://github.com/SignalPilot-Labs/signalpilot-cli)
