@@ -1,6 +1,9 @@
 # SignalPilot CLI - Development & Testing Docker Image
 FROM python:3.12-slim
 
+# Set UV to use copy mode instead of hardlinks (better for Docker)
+ENV UV_LINK_MODE=copy
+
 # Install system dependencies including uv via pip
 RUN apt-get update && apt-get install -y \
     curl \

@@ -15,7 +15,11 @@ Your Trusted CoPilot for Data Analysis - A simple CLI tool to bootstrap Jupyter-
 
 ```bash
 # No uv installed: curl -LsSf https://astral.sh/uv/install.sh | sh
-uvx signalpilot      # Initialize workspace
+uvx signalpilot      # Initialize workspace and starts Jupyter Lab
+```
+**OR Any time later**
+```bash
+# Easy way to start
 uvx signalpilot lab  # Start Jupyter Lab in ~/SignalPilotHome
 
 # OR manually activate and start
@@ -27,6 +31,7 @@ jupyter lab
 - Creates `~/SignalPilotHome` workspace with starter notebooks
 - Sets up Python 3.12 + Jupyter Lab + data packages (pandas, numpy, matplotlib, plotly)
 - Optimizes for fast startup
+- Launches Jupyter Lab in your default browser
 
 **Why uv?**
 - **10-100x faster** than pip/conda for package installation
@@ -58,8 +63,53 @@ brew install uv
 ├── user-rules/        # Custom agent rules
 ├── team-workspace/    # Shared team notebooks
 ├── demo-project/      # Example notebooks
+├── pyproject.toml     # Python project config
 ├── start-here.ipynb   # Quick start guide
 └── .venv/             # Python environment
+```
+
+## Advanced Lab Options
+
+### Working in Different Directories
+
+```bash
+# Default: Open ~/SignalPilotHome w/ default .venv
+uvx signalpilot lab
+
+# Open in current folder using default .venv in ~/SignalPilotHome
+uvx signalpilot lab --here
+
+# Open in current folder using local .venv
+uvx signalpilot lab --project
+```
+
+**`--here` flag:**
+- Opens Jupyter Lab in your current directory
+- Uses the default environment from `~/SignalPilotHome/.venv`
+- Perfect for quick exploration in any folder
+
+**`--project` flag:**
+- Opens Jupyter Lab in your current directory
+- Uses a local `.venv` in that directory
+- Great for project-specific work with custom dependencies
+- Requires a `.venv` to exist (create with `uv venv --seed --python 3.12`)
+
+### Passing Extra Arguments to Jupyter Lab
+
+You can pass any Jupyter Lab arguments after the command:
+
+```bash
+# Custom port
+uvx signalpilot lab --port=8888
+
+# Disable browser auto-open
+uvx signalpilot lab --no-browser
+
+# Combine with directory flags
+uvx signalpilot lab --here --port=8888
+
+# Any jupyter lab flag works
+uvx signalpilot lab --ip=0.0.0.0 --port=9999
 ```
 
 ## Requirements

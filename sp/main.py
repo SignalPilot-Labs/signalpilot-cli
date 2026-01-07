@@ -174,7 +174,7 @@ def run_init(dev: bool = False):
         download_pyproject = response.lower() in ["y", "yes"]
 
     # Download files from GitHub
-    base_url = "https://raw.githubusercontent.com/SignalPilot-Labs/sp-cli/refs/heads/sp-cli-v1/defaultSignalPilotHome/"
+    base_url = "https://raw.githubusercontent.com/SignalPilot-Labs/signalpilot-cli/refs/heads/sp-cli-v1/defaultSignalPilotHome/"
 
     console.print("\n→ Downloading workspace files...", style="dim")
 
@@ -271,9 +271,10 @@ def run_init(dev: bool = False):
 
     # Get SignalPilot version from installed packages
     sp_version = "unknown"
+    package_name = "signalpilot-ai-internal" if dev else "signalpilot-ai"
     try:
         result = subprocess.run(
-            [str(home_dir / ".venv" / "bin" / "pip"), "show", "signalpilot-ai"],
+            [str(home_dir / ".venv" / "bin" / "pip"), "show", package_name],
             capture_output=True,
             text=True,
             check=True,
@@ -346,27 +347,70 @@ def init(
 
 
 @app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
-def lab(ctx: typer.Context):
+def lab(
+    ctx: typer.Context,
+    here: bool = typer.Option(False, "--here", help="Open in current folder with default .venv"),
+    project: bool = typer.Option(False, "--project", help="Open in current folder with local .venv"),
+):
     """Start Jupyter Lab in SignalPilotHome (pass extra args to jupyter lab)"""
-    home_dir = Path.home() / "SignalPilotHome"
 
-    if not home_dir.exists():
-        console.print("✗ SignalPilotHome not found", style="bold red")
-        console.print("\nRun 'uvx signalpilot init' first to set up your workspace", style="yellow")
+    # Validate mutually exclusive flags
+    if here and project:
+        console.print("✗ Cannot use --here and --project together", style="bold red")
         sys.exit(1)
 
-    venv_jupyter = home_dir / ".venv" / "bin" / "jupyter"
+    # Determine workspace and venv based on flags
+    if project:
+        # Use current folder and local .venv
+        workspace_dir = Path.cwd()
+        venv_dir = workspace_dir / ".venv"
+
+        if not venv_dir.exists():
+            console.print("✗ No .venv found in current directory", style="bold red")
+            console.print("\nCreate a virtual environment first:", style="yellow")
+            console.print("  uv venv --seed --python 3.12", style="dim")
+            console.print("  uv pip install jupyterlab signalpilot-ai", style="dim")
+            sys.exit(1)
+
+    elif here:
+        # Use current folder but default .venv from SignalPilotHome
+        workspace_dir = Path.cwd()
+        home_dir = Path.home() / "SignalPilotHome"
+        venv_dir = home_dir / ".venv"
+
+        if not home_dir.exists():
+            console.print("✗ SignalPilotHome not found", style="bold red")
+            console.print("\nRun 'uvx signalpilot init' first to set up your workspace", style="yellow")
+            sys.exit(1)
+
+    else:
+        # Default: Use SignalPilotHome for both workspace and venv
+        home_dir = Path.home() / "SignalPilotHome"
+        workspace_dir = home_dir
+        venv_dir = home_dir / ".venv"
+
+        if not home_dir.exists():
+            console.print("✗ SignalPilotHome not found", style="bold red")
+            console.print("\nRun 'uvx signalpilot init' first to set up your workspace", style="yellow")
+            sys.exit(1)
+
+    # Check if jupyter exists in the venv
+    venv_jupyter = venv_dir / "bin" / "jupyter"
     if not venv_jupyter.exists():
         console.print("✗ Jupyter not found in virtual environment", style="bold red")
-        console.print("\nRun 'uvx signalpilot init' to set up your environment", style="yellow")
+        if project or here:
+            console.print("\nInstall Jupyter in the environment:", style="yellow")
+            console.print("  uv pip install jupyterlab", style="dim")
+        else:
+            console.print("\nRun 'uvx signalpilot init' to set up your environment", style="yellow")
         sys.exit(1)
 
     # Show welcome message with logo
     console.print("\n" + "="*60, style="white")
     console.print(LOGO, style="cyan")
     console.print("\n→ Starting Jupyter Lab", style="bold green")
-    console.print(f"  Workspace: {home_dir}", style="dim")
-    console.print(f"  Environment: {home_dir / '.venv'}", style="dim")
+    console.print(f"  Workspace: {workspace_dir}", style="dim")
+    console.print(f"  Environment: {venv_dir}", style="dim")
     if ctx.args:
         console.print(f"  Extra args: {' '.join(ctx.args)}", style="dim")
     console.print("="*60 + "\n", style="white")
@@ -376,7 +420,7 @@ def lab(ctx: typer.Context):
         # Pass any extra arguments to jupyter lab
         subprocess.run(
             [str(venv_jupyter), "lab"] + list(ctx.args),
-            cwd=home_dir,
+            cwd=workspace_dir,
         )
     except KeyboardInterrupt:
         console.print("\n\n→ Jupyter Lab stopped", style="dim")
