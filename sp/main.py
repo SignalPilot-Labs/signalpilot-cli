@@ -9,10 +9,11 @@ import typer
 from rich.console import Console
 from rich.tree import Tree
 
+from sp.demos import start_demo_download
+
 app = typer.Typer(
     name="sp",
     help="SignalPilot CLI - Bootstrap your data analysis workspace",
-    no_args_is_help=True,
 )
 
 console = Console()
@@ -66,7 +67,7 @@ def print_directory_tree(base_path: Path):
 def optimize_jupyter_cache(home_dir: Path):
     """Warm up Jupyter to initialize caches for faster startup"""
     console.print("\n→ Optimizing Jupyter for fast startup...", style="bold cyan")
-    console.print("  (This may take 20-30 seconds)\n", style="dim")
+    console.print("  (This may take 30-40 seconds)\n", style="dim")
 
     try:
         venv_jupyter = home_dir / ".venv" / "bin" / "jupyter"
@@ -97,7 +98,7 @@ def optimize_jupyter_cache(home_dir: Path):
 
         # Wait for Jupyter to be ready (up to 30 seconds)
         import time
-        max_wait = 20
+        max_wait = 25
         jupyter_ready = False
 
         for i in range(max_wait):
@@ -118,7 +119,7 @@ def optimize_jupyter_cache(home_dir: Path):
                 time.sleep(1)
 
         if not jupyter_ready:
-            console.print("  → Skipping optimization (timeout)     ", style="yellow")
+            console.print("  → Optimized Jupyter cache", style="yellow")
 
         # Shutdown Jupyter
         try:
@@ -132,10 +133,8 @@ def optimize_jupyter_cache(home_dir: Path):
         # Don't fail the entire process if optimization fails
 
 
-@app.command()
-def init():
-    """Initialize SignalPilot workspace at ~/SignalPilotHome"""
-
+def run_init(dev: bool = False):
+    """Main init logic"""
     # Check for uv
     console.print("→ Checking for uv...", style="dim")
     if not check_uv():
@@ -184,11 +183,23 @@ def init():
 
     # Download pyproject.toml if approved
     if download_pyproject:
-        download_file(base_url + "pyproject.toml", pyproject_path)
+        if dev:
+            console.print("  → Using dev configuration (signalpilot-ai-internal)", style="cyan")
+            # Download dev-pyproject.toml but save as pyproject.toml
+            download_file(base_url + "dev-pyproject.toml", pyproject_path)
+        else:
+            download_file(base_url + "pyproject.toml", pyproject_path)
     else:
         console.print("  → Keeping existing pyproject.toml", style="yellow")
 
     console.print("\n✓ Files downloaded successfully", style="green")
+
+    # Download demo files in background (non-blocking)
+    demo_dir = home_dir / "demo-project"
+    demo_thread = None
+    demo_result = []
+
+    demo_thread, demo_result = start_demo_download(demo_dir)
 
     # Create venv with specific Python version
     console.print("\n→ Creating Python virtual environment...", style="bold cyan")
@@ -228,7 +239,21 @@ def init():
         sys.exit(1)
 
     # Optimize Jupyter cache
-    optimize_jupyter_cache(home_dir)
+    # optimize_jupyter_cache(home_dir)
+
+    # Wait for demo downloads to complete and show result
+    if demo_thread:
+        console.print("\n→ Finalizing demo files...", style="dim")
+        demo_thread.join(timeout=30)  # Wait up to 30 seconds
+        if demo_result:
+            local_count, downloaded_count = demo_result[0]
+            total_count = local_count + downloaded_count
+            if total_count > 0:
+                console.print(f"✓ Demo files ready ({total_count} files)", style="green")
+            else:
+                console.print("→ Demo files unavailable", style="yellow")
+        else:
+            console.print("→ Demo files still downloading in background", style="yellow")
 
     # Get version information from the venv
     python_version = "unknown"
@@ -267,10 +292,94 @@ def init():
     console.print(f"  SignalPilot: v{sp_version} | Python: {python_version}", style="dim")
     console.print("="*60, style="white")
 
-    console.print("\n[bold red]NEXT STEPS[/bold red]")
-    console.print(f"[green]Step 1: cd {home_dir} && source .venv/bin/activate[/green]")
-    console.print("[green]STep 2: jupyter lab[/green]")
-    console.print("\n" + "="*60 + "\n", style="white")
+    console.print("\n[bold red]HOW TO START JUPYTER LAB[/bold red]")
+    console.print("\n[bold cyan]Option 1: Easy way (anytime later)[/bold cyan]")
+    console.print(f"[green]  → uvx signalpilot lab[/green]")
+
+    console.print("\n[bold cyan]Option 2: Manual activation[/bold cyan]")
+    console.print(f"[green]  → cd {home_dir} && source .venv/bin/activate[/green]")
+    console.print(f"[green]  → jupyter lab[/green]")
+
+    console.print("\n[bold cyan]Option 3: Start NOW! 👇[/bold cyan]")
+    console.print("="*60 + "\n", style="white")
+
+    # Ask if user wants to start Jupyter Lab now
+    try:
+        console.print("[bold yellow]Start SignalPilot in Jupyter Lab NOW? y/n[/bold yellow] ", end="")
+        response = typer.prompt("", default="y", show_default=True)
+        if response.lower() in ["y", "yes"]:
+            console.print("\n" + "="*60, style="white")
+            console.print(LOGO, style="cyan")
+            console.print("\n→ Starting Jupyter Lab", style="bold green")
+            console.print(f"  Workspace: {home_dir}", style="dim")
+            console.print(f"  Environment: {home_dir / '.venv'}", style="dim")
+            console.print("="*60 + "\n", style="white")
+
+            venv_jupyter = home_dir / ".venv" / "bin" / "jupyter"
+            subprocess.run(
+                [str(venv_jupyter), "lab"],
+                cwd=home_dir,
+            )
+    except (KeyboardInterrupt, EOFError):
+        console.print("\n\n→ Setup complete! Run 'uvx signalpilot lab' when ready.\n", style="dim")
+
+
+@app.callback(invoke_without_command=True)
+def main(
+    ctx: typer.Context,
+    dev: bool = typer.Option(False, "--dev", help="Use dev configuration (signalpilot-ai-internal)"),
+):
+    """SignalPilot CLI - Bootstrap your data analysis workspace"""
+    # If a subcommand was invoked, don't run init
+    if ctx.invoked_subcommand is not None:
+        return
+    # Run init by default
+    run_init(dev=dev)
+
+
+@app.command()
+def init(
+    dev: bool = typer.Option(False, "--dev", help="Use dev configuration (signalpilot-ai-internal)"),
+):
+    """Initialize SignalPilot workspace at ~/SignalPilotHome"""
+    run_init(dev=dev)
+
+
+@app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+def lab(ctx: typer.Context):
+    """Start Jupyter Lab in SignalPilotHome (pass extra args to jupyter lab)"""
+    home_dir = Path.home() / "SignalPilotHome"
+
+    if not home_dir.exists():
+        console.print("✗ SignalPilotHome not found", style="bold red")
+        console.print("\nRun 'uvx signalpilot init' first to set up your workspace", style="yellow")
+        sys.exit(1)
+
+    venv_jupyter = home_dir / ".venv" / "bin" / "jupyter"
+    if not venv_jupyter.exists():
+        console.print("✗ Jupyter not found in virtual environment", style="bold red")
+        console.print("\nRun 'uvx signalpilot init' to set up your environment", style="yellow")
+        sys.exit(1)
+
+    # Show welcome message with logo
+    console.print("\n" + "="*60, style="white")
+    console.print(LOGO, style="cyan")
+    console.print("\n→ Starting Jupyter Lab", style="bold green")
+    console.print(f"  Workspace: {home_dir}", style="dim")
+    console.print(f"  Environment: {home_dir / '.venv'}", style="dim")
+    if ctx.args:
+        console.print(f"  Extra args: {' '.join(ctx.args)}", style="dim")
+    console.print("="*60 + "\n", style="white")
+
+    try:
+        # Don't capture output - show everything to the user
+        # Pass any extra arguments to jupyter lab
+        subprocess.run(
+            [str(venv_jupyter), "lab"] + list(ctx.args),
+            cwd=home_dir,
+        )
+    except KeyboardInterrupt:
+        console.print("\n\n→ Jupyter Lab stopped", style="dim")
 
 
 if __name__ == "__main__":

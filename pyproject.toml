@@ -1,6 +1,6 @@
 [project]
 name = "signalpilot"
-version = "0.3.1"
+version = "0.3.2"
 description = "SignalPilot CLI - Your Trusted CoPilot for Data Analysis"
 readme = "README.md"
 requires-python = ">=3.10"

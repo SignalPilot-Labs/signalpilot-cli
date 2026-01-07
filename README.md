@@ -9,34 +9,37 @@ Your Trusted CoPilot for Data Analysis - A simple CLI tool to bootstrap Jupyter-
 - 📊 **Pre-configured workspace** - Includes pandas, numpy, matplotlib, seaborn, plotly
 - 🤖 **AI-ready** - Built-in SignalPilot AI agent support
 - ⚡ **Fast** - Optimized Jupyter cache for quick startups
-- �� **Beautiful CLI** - Clean, colorful terminal output
+- ✨ **Beautiful CLI** - Clean, colorful terminal output
 
 ## Quick Start
 
 ```bash
-# Install uv (if you don't have it)
-brew install uv  # macOS
-# OR
-curl -LsSf https://astral.sh/uv/install.sh | sh  # Linux/macOS
+# No uv installed: curl -LsSf https://astral.sh/uv/install.sh | sh
+uvx signalpilot      # Initialize workspace
+uvx signalpilot lab  # Start Jupyter Lab in ~/SignalPilotHome
 
-# Run SignalPilot init (no installation needed!)
-uvx signalpilot init
-```
-
-That's it! The tool will:
-1. Create `~/SignalPilotHome` directory structure
-2. Download starter notebook and dependencies
-3. Set up Python 3.12 virtual environment
-4. Install Jupyter Lab and data science packages
-5. Optimize Jupyter cache for fast startup
-
-## Usage
-
-After running `sp init`, follow the next steps:
-
-```bash
+# OR manually activate and start
 cd ~/SignalPilotHome && source .venv/bin/activate
 jupyter lab
+```
+
+**What happens:**
+- Creates `~/SignalPilotHome` workspace with starter notebooks
+- Sets up Python 3.12 + Jupyter Lab + data packages (pandas, numpy, matplotlib, plotly)
+- Optimizes for fast startup
+
+**Why uv?**
+- **10-100x faster** than pip/conda for package installation
+- **SignalPilot Kernel runs on it** - native integration
+- Modern Python package management
+
+**Other ways to install uv:**
+```bash
+# Linux/macOS (recommended)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# macOS
+brew install uv
 ```
 
 ## What Gets Installed
@@ -68,7 +71,7 @@ jupyter lab
 
 ### Option 1: Consider Running with uvx (Recommended - no installation needed)
 ```bash
-uvx signalpilot init
+uvx signalpilot
 ```
 
 ### Option 2: Install with uv
