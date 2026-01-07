@@ -239,7 +239,7 @@ def run_init(dev: bool = False):
         sys.exit(1)
 
     # Optimize Jupyter cache
-    # optimize_jupyter_cache(home_dir)
+    optimize_jupyter_cache(home_dir)
 
     # Wait for demo downloads to complete and show result
     if demo_thread:
