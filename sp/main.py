@@ -64,23 +64,6 @@ def print_directory_tree(base_path: Path):
     console.print(tree)
 
 
-# def create_jupyter_config(home_dir: Path):
-#     """Create Jupyter Lab config to enforce native kernels only"""
-#     jupyter_config_dir = home_dir / ".jupyter"
-#     jupyter_config_dir.mkdir(exist_ok=True)
-
-#     config_path = jupyter_config_dir / "jupyter_lab_config.py"
-#     config_content = """# Jupyter Lab Configuration for SignalPilot
-# # Only allow native Python kernels from the virtual environment
-
-# c.KernelSpecManager.ensure_native_kernel = True
-# c.KernelSpecManager.allowed_kernelspecs = set()  # empty = only native kernels
-# """
-
-#     config_path.write_text(config_content)
-#     console.print(f"  ✓ Jupyter config created at {config_path}", style="dim")
-
-
 def run_jupyter_lab(venv_dir: Path, workspace_dir: Path, extra_args: list = None):
     """Launch Jupyter Lab with proper environment configuration"""
     import os
@@ -135,8 +118,14 @@ def run_jupyter_lab(venv_dir: Path, workspace_dir: Path, extra_args: list = None
     # Remove PYTHONHOME if set, as it can interfere with venv
     env.pop("PYTHONHOME", None)
 
-    # Build command with null token and any extra args
-    cmd = [str(venv_jupyter), "lab", "--IdentityProvider.token=''"]
+    # Build command with null token, native kernels only, and any extra args
+    cmd = [
+        str(venv_jupyter),
+        "lab",
+        "--IdentityProvider.token=''",
+        "--KernelSpecManager.ensure_native_kernel=True",
+        "--KernelSpecManager.allowed_kernelspecs=[]",
+    ]
     if extra_args:
         cmd.extend(extra_args)
 
