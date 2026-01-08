@@ -1,103 +1,133 @@
-# SignalPilot CLI
+# SignalPilot Installer CLI
 
-Your Trusted CoPilot for Data Analysis - A simple CLI tool to bootstrap Jupyter-powered data science workspaces with AI agent support.
+This installer CLI is a bootstrap installer that sets up the [SignalPilot-AI](https://pypi.org/project/signalpilot-ai/) Jupyter extension in one command.
 
-## Features
+<Info>
+**The CLI is NOT the product.** It's a convenience installer. The **SignalPilot Jupyter extension** (agentic harness) is the actual product.
+</Info>
 
-- 🚀 **One-command setup** - Get from zero to Jupyter Lab in under 3 minutes
-- ⚡  **Python 3.12** - Uses the latest Python with uv for fast package management
-- 📊 **Pre-configured workspace** - Includes pandas, numpy, matplotlib, seaborn, plotly
-- 🤖 **AI-ready** - Built-in SignalPilot AI agent support
-- ⚡ **Fast** - Optimized Jupyter cache for quick startups
-- ✨ **Beautiful CLI** - Clean, colorful terminal output
+## What You're Installing
 
-## Quick Start
+SignalPilot is a **Jupyter-native AI agentic harness** that investigates data by connecting to your organizational context:
 
+**Four core capabilities:**
+
+- 🔌 **Multi-Source Context** — Auto-connects to db warehouse, dbt lineage, query history, Slack threads, Jira tickets, and past investigations via MCP
+- 🔄 **Long-Running Agent Loop** — Plans, executes, iterates until task complete with analyst-in-the-loop approval (not single-shot completions)
+- 🧠 **Multi-Session Memory** — Remembers past hypotheses, validated assumptions, known data quirks across investigations
+- 📚 **Skills & Rules** — Custom analysis patterns (skills) + team coding standards (rules) + business logic
+
+**Security:** Zero data retention • Read-only access • Local-first execution • SOC 2 in progress
+
+## Quick Install
+
+**Prerequisites:** macOS, Linux, or Windows (WSL) • Internet connection
+
+**Don't have [uv](https://docs.astral.sh/uv/getting-started/installation/)?** Install it first (takes 10 seconds):
 ```bash
-# No uv installed: curl -LsSf https://astral.sh/uv/install.sh | sh
-uvx signalpilot      # Initialize workspace and starts Jupyter Lab
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
-**OR Any time later**
-```bash
-# Easy way to start
-uvx signalpilot lab  # Start Jupyter Lab in ~/SignalPilotHome
 
-# OR manually activate and start
-cd ~/SignalPilotHome && source .venv/bin/activate
-jupyter lab
+**Install SignalPilot:**
+```bash
+uvx signalpilot
 ```
 
 **What happens:**
 - Creates `~/SignalPilotHome` workspace with starter notebooks
-- Sets up Python 3.12 + Jupyter Lab + data packages (pandas, numpy, matplotlib, plotly)
-- Optimizes for fast startup
-- Launches Jupyter Lab in your default browser
+- Installs isolated Python 3.12 + Jupyter Lab + SignalPilot extension
+- Installs data packages (pandas, numpy, matplotlib, seaborn, plotly)
+- Optimizes Jupyter cache for fast startup
+- Launches Jupyter Lab at `http://localhost:8888`
+
+**Time:** ~2 minutes
 
 **Why uv?**
 - **10-100x faster** than pip/conda for package installation
-- **SignalPilot Kernel runs on it** - native integration
-- Modern Python package management
+- **SignalPilot runs on it** — native integration with kernel
+- Modern Python package management with better dependency resolution
 
-**Other ways to install uv:**
+## Launch Jupyter Lab Anytime
+
+Once installed, start Jupyter Lab with:
+
 ```bash
-# Linux/macOS (recommended)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# macOS
-brew install uv
+uvx signalpilot lab
 ```
+
+**What this does:**
+- Opens Jupyter Lab in `~/SignalPilotHome` (default workspace)
+- Uses existing `.venv` (no reinstallation)
+- SignalPilot extension pre-loaded
+- Opens browser at `http://localhost:8888`
 
 ## What Gets Installed
 
 **Python Packages:**
-- `signalpilot-ai` - AI agent integration
-- `jupyterlab` - Modern Jupyter interface
-- `pandas`, `numpy` - Data manipulation
-- `matplotlib`, `seaborn`, `plotly` - Visualization
-- `python-dotenv`, `tomli` - Configuration utilities
+- `signalpilot-ai` — AI agent integration (the actual product)
+- `jupyterlab` — Modern Jupyter interface
+- `pandas`, `numpy` — Data manipulation
+- `matplotlib`, `seaborn`, `plotly` — Visualization
+- `python-dotenv`, `tomli` — Configuration utilities
 
 **Directory Structure:**
 ```
 ~/SignalPilotHome/
-├── user-skills/       # Custom agent skills
-├── user-rules/        # Custom agent rules
-├── team-workspace/    # Shared team notebooks
+├── user-skills/       # Custom analysis patterns
+├── user-rules/        # Team coding standards
+├── team-workspace/    # Shared notebooks (git-tracked)
 ├── demo-project/      # Example notebooks
 ├── pyproject.toml     # Python project config
 ├── start-here.ipynb   # Quick start guide
 └── .venv/             # Python environment
 ```
 
-## Advanced Lab Options
+## Working in Different Directories
 
-### Working in Different Directories
+By default, SignalPilot works in `~/SignalPilotHome`. Use these flags to customize:
+
+### `--here` flag: Use current directory with default environment
 
 ```bash
-# Default: Open ~/SignalPilotHome w/ default .venv
-uvx signalpilot lab
-
-# Open in current folder using default .venv in ~/SignalPilotHome
+cd ~/projects/my-analysis
 uvx signalpilot lab --here
+```
 
-# Open in current folder using local .venv
-# MUST have a .venv in the current directory w/ jupyterlab and signalpilot-ai installed
+**What this does:**
+- Opens Jupyter Lab in your **current directory**
+- Uses **default environment** from `~/SignalPilotHome/.venv`
+- Perfect for quick exploration without setting up new environment
+
+**Use case:** Analyzing data files in an existing project folder
+
+### `--project` flag: Use current directory with local environment
+
+```bash
+cd ~/projects/custom-analytics
 uvx signalpilot lab --project
 ```
 
-**`--here` flag:**
-- Opens Jupyter Lab in your current directory
-- Uses the default environment from `~/SignalPilotHome/.venv`
-- Perfect for quick exploration in any folder
-
-**`--project` flag:**
-- Opens Jupyter Lab in your current directory
-- Uses a local `.venv` in that directory
+**What this does:**
+- Opens Jupyter Lab in your **current directory**
+- Uses **local `.venv`** in that directory
 - Great for project-specific work with custom dependencies
-- Requires a `.venv` to exist (create with `uv venv --seed --python 3.12`)
 
-### Passing Extra Arguments to Jupyter Lab
+**Requirements:**
+- A `.venv` must exist in current directory
+- Must have `jupyterlab` and `signalpilot-ai` installed
 
-You can pass any Jupyter Lab arguments after the command:
+**Create project environment:**
+```bash
+mkdir ~/projects/custom-analytics && cd ~/projects/custom-analytics
+uv venv --seed --python 3.12
+source .venv/bin/activate
+uv pip install jupyterlab signalpilot-ai pandas numpy matplotlib plotly
+uvx signalpilot lab --project
+```
+
+## Pass Jupyter Lab Arguments
+
+You can pass any Jupyter Lab flags after the command:
 
 ```bash
 # Custom port
@@ -109,40 +139,47 @@ uvx signalpilot lab --no-browser
 # Combine with directory flags
 uvx signalpilot lab --here --port=8888
 
-# Any jupyter lab flag works
+# Bind to all interfaces (remote access)
 uvx signalpilot lab --ip=0.0.0.0 --port=9999
 ```
 
-## Requirements
+All standard `jupyter lab` arguments work.
 
-- Python 3.10 or higher
-- [uv](https://docs.astral.sh/uv/) package manager
+## Alternative Installation Methods
 
-## Permanent Installation Options (Not Recommended)
-
-### Option 1: Consider Running with uvx (Recommended - no installation needed)
+### Option 1: Run with uvx (Recommended)
 ```bash
 uvx signalpilot
 ```
+No permanent installation needed. Perfect for most users.
 
-### Option 2: Install with uv
+### Option 2: Install with uv tool
 ```bash
 uv tool install signalpilot
 sp init
 ```
+Installs `sp` command globally. Use `sp lab` to launch later.
 
 ### Option 3: Install with pip
 ```bash
 pip install signalpilot
 sp init
 ```
+Works but slower than uv (10-100x). May have dependency conflicts.
 
-## License
+## Requirements
 
-MIT License - See LICENSE file for details
+- Python 3.10 or higher
+- [uv](https://docs.astral.sh/uv/) package manager (recommended)
 
 ## Links
 
 - [Homepage](https://signalpilot.ai)
-- [Documentation](https://docs.signalpilot.ai)
+- [Full Documentation](https://docs.signalpilot.ai)
+- [Installation Guide](https://docs.signalpilot.ai/getting-started/installation)
+- [5-Minute Quickstart](https://docs.signalpilot.ai/getting-started/quickstart)
 - [GitHub](https://github.com/SignalPilot-Labs/signalpilot-cli)
+
+## License
+
+MIT License - See LICENSE file for details
