@@ -64,6 +64,85 @@ def print_directory_tree(base_path: Path):
     console.print(tree)
 
 
+# def create_jupyter_config(home_dir: Path):
+#     """Create Jupyter Lab config to enforce native kernels only"""
+#     jupyter_config_dir = home_dir / ".jupyter"
+#     jupyter_config_dir.mkdir(exist_ok=True)
+
+#     config_path = jupyter_config_dir / "jupyter_lab_config.py"
+#     config_content = """# Jupyter Lab Configuration for SignalPilot
+# # Only allow native Python kernels from the virtual environment
+
+# c.KernelSpecManager.ensure_native_kernel = True
+# c.KernelSpecManager.allowed_kernelspecs = set()  # empty = only native kernels
+# """
+
+#     config_path.write_text(config_content)
+#     console.print(f"  ✓ Jupyter config created at {config_path}", style="dim")
+
+
+def run_jupyter_lab(venv_dir: Path, workspace_dir: Path, extra_args: list = None):
+    """Launch Jupyter Lab with proper environment configuration"""
+    import os
+
+    venv_jupyter = venv_dir / "bin" / "jupyter"
+    venv_python = venv_dir / "bin" / "python"
+
+    # Get Python version
+    python_version = "unknown"
+    try:
+        result = subprocess.run(
+            [str(venv_python), "--version"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        python_version = result.stdout.strip().split()[1]
+    except Exception:
+        pass
+
+    # Get key package versions
+    jupyter_version = "unknown"
+    try:
+        result = subprocess.run(
+            [str(venv_dir / "bin" / "pip"), "show", "jupyterlab"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        for line in result.stdout.split("\n"):
+            if line.startswith("Version:"):
+                jupyter_version = line.split(":", 1)[1].strip()
+                break
+    except Exception:
+        pass
+
+    # Print diagnostic information
+    console.print("\n" + "="*60, style="white")
+    console.print(LOGO, style="cyan")
+    console.print("\n→ Starting Jupyter Lab", style="bold green")
+    console.print(f"  Workspace: {workspace_dir}", style="dim")
+    console.print(f"  Environment: {venv_dir}", style="dim")
+    console.print(f"  Python: {python_version} | JupyterLab: {jupyter_version}", style="dim")
+    if extra_args:
+        console.print(f"  Extra args: {' '.join(extra_args)}", style="dim")
+    console.print("="*60 + "\n", style="white")
+
+    # Set up environment to point Jupyter to the correct venv
+    env = os.environ.copy()
+    env["VIRTUAL_ENV"] = str(venv_dir)
+    env["PATH"] = f"{venv_dir / 'bin'}:{env.get('PATH', '')}"
+    # Remove PYTHONHOME if set, as it can interfere with venv
+    env.pop("PYTHONHOME", None)
+
+    # Build command with null token and any extra args
+    cmd = [str(venv_jupyter), "lab", "--IdentityProvider.token=''"]
+    if extra_args:
+        cmd.extend(extra_args)
+
+    subprocess.run(cmd, cwd=workspace_dir, env=env)
+
+
 def optimize_jupyter_cache(home_dir: Path):
     """Warm up Jupyter to initialize caches for faster startup"""
     console.print("\n→ Optimizing Jupyter for fast startup...", style="bold cyan")
@@ -309,18 +388,8 @@ def run_init(dev: bool = False):
         console.print("[bold yellow]Start SignalPilot in Jupyter Lab NOW? y/n[/bold yellow] ", end="")
         response = typer.prompt("", default="y", show_default=True)
         if response.lower() in ["y", "yes"]:
-            console.print("\n" + "="*60, style="white")
-            console.print(LOGO, style="cyan")
-            console.print("\n→ Starting Jupyter Lab", style="bold green")
-            console.print(f"  Workspace: {home_dir}", style="dim")
-            console.print(f"  Environment: {home_dir / '.venv'}", style="dim")
-            console.print("="*60 + "\n", style="white")
-
-            venv_jupyter = home_dir / ".venv" / "bin" / "jupyter"
-            subprocess.run(
-                [str(venv_jupyter), "lab"],
-                cwd=home_dir,
-            )
+            venv_dir = home_dir / ".venv"
+            run_jupyter_lab(venv_dir, home_dir)
     except (KeyboardInterrupt, EOFError):
         console.print("\n\n→ Setup complete! Run 'uvx signalpilot lab' when ready.\n", style="dim")
 
@@ -405,23 +474,9 @@ def lab(
             console.print("\nRun 'uvx signalpilot init' to set up your environment", style="yellow")
         sys.exit(1)
 
-    # Show welcome message with logo
-    console.print("\n" + "="*60, style="white")
-    console.print(LOGO, style="cyan")
-    console.print("\n→ Starting Jupyter Lab", style="bold green")
-    console.print(f"  Workspace: {workspace_dir}", style="dim")
-    console.print(f"  Environment: {venv_dir}", style="dim")
-    if ctx.args:
-        console.print(f"  Extra args: {' '.join(ctx.args)}", style="dim")
-    console.print("="*60 + "\n", style="white")
-
+    # Launch Jupyter Lab with proper environment setup
     try:
-        # Don't capture output - show everything to the user
-        # Pass any extra arguments to jupyter lab
-        subprocess.run(
-            [str(venv_jupyter), "lab"] + list(ctx.args),
-            cwd=workspace_dir,
-        )
+        run_jupyter_lab(venv_dir, workspace_dir, extra_args=list(ctx.args) if ctx.args else None)
     except KeyboardInterrupt:
         console.print("\n\n→ Jupyter Lab stopped", style="dim")
 
