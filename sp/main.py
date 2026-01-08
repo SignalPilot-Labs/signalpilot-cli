@@ -108,6 +108,14 @@ def ensure_home_setup() -> tuple[Path, Path]:
     return home_dir, home_venv_dir
 
 
+def launch_jupyter_with_interrupt_handler(venv_dir: Path, workspace_dir: Path, extra_args: list = None, show_warning: bool = False):
+    """Launch Jupyter Lab with proper environment and handle KeyboardInterrupt."""
+    try:
+        run_jupyter_lab(venv_dir, workspace_dir, extra_args=extra_args, show_warning=show_warning)
+    except KeyboardInterrupt:
+        console.print("\n\n→ Jupyter Lab stopped", style="dim")
+
+
 def run_jupyter_lab(venv_dir: Path, workspace_dir: Path, extra_args: list = None, show_warning: bool = False):
     """Launch Jupyter Lab with proper environment configuration"""
     import os
@@ -431,7 +439,7 @@ def run_init(dev: bool = False):
         response = typer.prompt("", default="y", show_default=True)
         if response.lower() in ["y", "yes"]:
             venv_dir = home_dir / ".venv"
-            run_jupyter_lab(venv_dir, home_dir)
+            launch_jupyter_with_interrupt_handler(venv_dir, home_dir)
     except (KeyboardInterrupt, EOFError):
         console.print("\n\n→ Setup complete! Run 'uvx signalpilot lab' when ready.\n", style="dim")
 
@@ -505,21 +513,14 @@ def lab(
         show_warning = local_venv is not None
 
     # Launch Jupyter Lab with proper environment setup
-    try:
-        run_jupyter_lab(venv_dir, workspace_dir, extra_args=list(ctx.args) if ctx.args else None, show_warning=show_warning)
-    except KeyboardInterrupt:
-        console.print("\n\n→ Jupyter Lab stopped", style="dim")
+    launch_jupyter_with_interrupt_handler(venv_dir, workspace_dir, extra_args=list(ctx.args) if ctx.args else None, show_warning=show_warning)
 
 
 @app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def home(ctx: typer.Context):
     """Start Jupyter Lab in SignalPilotHome (shortcut for 'lab --home')"""
     home_dir, home_venv_dir = ensure_home_setup()
-
-    try:
-        run_jupyter_lab(home_venv_dir, home_dir, extra_args=list(ctx.args) if ctx.args else None)
-    except KeyboardInterrupt:
-        console.print("\n\n→ Jupyter Lab stopped", style="dim")
+    launch_jupyter_with_interrupt_handler(home_venv_dir, home_dir, extra_args=list(ctx.args) if ctx.args else None)
 
 
 if __name__ == "__main__":
