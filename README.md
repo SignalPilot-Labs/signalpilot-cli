@@ -30,7 +30,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 **Install SignalPilot:**
 ```bash
-uvx signalpilot
+uvx signalpilot@latest
 ```
 
 **What happens:**
@@ -52,14 +52,16 @@ uvx signalpilot
 Once installed, start Jupyter Lab with:
 
 ```bash
-uvx signalpilot lab
+uvx signalpilot@latest lab
 ```
 
 **What this does:**
-- Opens Jupyter Lab in `~/SignalPilotHome` (default workspace)
-- Uses existing `.venv` (no reinstallation)
+- Opens Jupyter Lab in your **current directory**
+- Uses **home environment** from `~/SignalPilotHome/.venv`
 - SignalPilot extension pre-loaded
 - Opens browser at `http://localhost:8888`
+
+**⚠️ Smart Detection:** If a local `.venv` with jupyter is detected in your current directory, you'll see a red warning. Use `--project` flag to use it instead.
 
 ## What Gets Installed
 
@@ -82,34 +84,34 @@ uvx signalpilot lab
 └── .venv/             # Python environment
 ```
 
-## Working in Different Directories
+## Working in Different Modes
 
-By default, SignalPilot works in `~/SignalPilotHome`. Use these flags to customize:
+SignalPilot offers three ways to launch Jupyter Lab:
 
-### `--here` flag: Use current directory with default environment
+### Default Mode (Current Folder + Home Environment)
 
 ```bash
 cd ~/projects/my-analysis
-uvx signalpilot lab --here
+uvx signalpilot@latest lab
 ```
 
 **What this does:**
 - Opens Jupyter Lab in your **current directory**
-- Uses **default environment** from `~/SignalPilotHome/.venv`
+- Uses **home environment** from `~/SignalPilotHome/.venv`
 - Perfect for quick exploration without setting up new environment
 
-**Use case:** Analyzing data files in an existing project folder
+**⚠️ Warning:** If you have a local `.venv` with jupyter, you'll see a red warning prompting you to use `--project` flag.
 
-### `--project` flag: Use current directory with local environment
+### Project Mode (Current Folder + Local Environment)
 
 ```bash
 cd ~/projects/custom-analytics
-uvx signalpilot lab --project
+uvx signalpilot@latest lab --project
 ```
 
 **What this does:**
 - Opens Jupyter Lab in your **current directory**
-- Uses **local `.venv`** in that directory
+- Uses **local `.venv`** in that directory (fails if missing)
 - Great for project-specific work with custom dependencies
 
 **Requirements:**
@@ -122,8 +124,21 @@ mkdir ~/projects/custom-analytics && cd ~/projects/custom-analytics
 uv venv --seed --python 3.12
 source .venv/bin/activate
 uv pip install jupyterlab signalpilot-ai pandas numpy matplotlib plotly
-uvx signalpilot lab --project
+uvx signalpilot@latest lab --project
 ```
+
+### Home Mode (SignalPilotHome Workspace + Home Environment)
+
+```bash
+uvx signalpilot@latest lab --home
+# Or use the shortcut:
+uvx signalpilot@latest home
+```
+
+**What this does:**
+- Opens Jupyter Lab in `~/SignalPilotHome` directory
+- Uses **home environment** from `~/SignalPilotHome/.venv`
+- Default workspace with all your skills, rules, and team notebooks
 
 ## Pass Jupyter Lab Arguments
 
@@ -131,16 +146,17 @@ You can pass any Jupyter Lab flags after the command:
 
 ```bash
 # Custom port
-uvx signalpilot lab --port=8888
+uvx signalpilot@latest lab --port=8889
 
 # Disable browser auto-open
-uvx signalpilot lab --no-browser
+uvx signalpilot@latest lab --no-browser
 
-# Combine with directory flags
-uvx signalpilot lab --here --port=8888
+# Combine with mode flags
+uvx signalpilot@latest lab --project --port=8889
+uvx signalpilot@latest home --no-browser
 
 # Bind to all interfaces (remote access)
-uvx signalpilot lab --ip=0.0.0.0 --port=9999
+uvx signalpilot@latest lab --ip=0.0.0.0 --port=9999
 ```
 
 All standard `jupyter lab` arguments work.
@@ -149,16 +165,21 @@ All standard `jupyter lab` arguments work.
 
 ### Option 1: Run with uvx (Recommended)
 ```bash
-uvx signalpilot
+uvx signalpilot@latest
 ```
-No permanent installation needed. Perfect for most users.
+No permanent installation needed. Perfect for most users. Always gets the latest version.
 
 ### Option 2: Install with uv tool
 ```bash
 uv tool install signalpilot
 sp init
 ```
-Installs `sp` command globally. Use `sp lab` to launch later.
+Installs `sp` command globally. Use `sp lab`, `sp home` to launch later.
+
+**Note:** Global installations don't auto-update. Reinstall periodically:
+```bash
+uv tool install --force signalpilot
+```
 
 ### Option 3: Install with pip
 ```bash
