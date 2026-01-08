@@ -49,8 +49,3 @@ dependencies = [
 #     "polars>=0.19",
 #     "pyarrow>=14.0",
 # ]
-
-[tool.signalpilot]
-# SignalPilot-specific configuration
-default_kernel = "python3"
-auto_install_deps = true
