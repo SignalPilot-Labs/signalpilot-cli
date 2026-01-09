@@ -2,9 +2,8 @@
 
 This installer CLI is a bootstrap installer that sets up the [SignalPilot-AI](https://pypi.org/project/signalpilot-ai/) Jupyter extension in one command.
 
-<Info>
+
 **The CLI is NOT the product.** It's a convenience installer. The **SignalPilot Jupyter extension** (agentic harness) is the actual product.
-</Info>
 
 ## What You're Installing
 
