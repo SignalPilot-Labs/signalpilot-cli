@@ -508,9 +508,9 @@ def lab(
         workspace_dir = Path.cwd()
         venv_dir = home_venv_dir
 
-        # Warn if local .venv exists with jupyter
+        # Warn if local .venv exists with jupyter (but not if we're in SignalPilotHome)
         local_venv = check_local_venv(workspace_dir)
-        show_warning = local_venv is not None
+        show_warning = local_venv is not None and workspace_dir != home_dir
 
     # Launch Jupyter Lab with proper environment setup
     launch_jupyter_with_interrupt_handler(venv_dir, workspace_dir, extra_args=list(ctx.args) if ctx.args else None, show_warning=show_warning)
