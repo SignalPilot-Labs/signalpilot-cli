@@ -25,36 +25,6 @@ def run_jupyter_lab(
         None (blocks until Jupyter is terminated)
     """
     venv_jupyter = venv_dir / "bin" / "jupyter"
-    venv_python = venv_dir / "bin" / "python"
-
-    # Get Python version
-    python_version = "unknown"
-    try:
-        result = subprocess.run(
-            [str(venv_python), "--version"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        python_version = result.stdout.strip().split()[1]
-    except Exception:
-        pass
-
-    # Get JupyterLab version
-    jupyter_version = "unknown"
-    try:
-        result = subprocess.run(
-            [str(venv_dir / "bin" / "pip"), "show", "jupyterlab"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        for line in result.stdout.split("\n"):
-            if line.startswith("Version:"):
-                jupyter_version = line.split(":", 1)[1].strip()
-                break
-    except Exception:
-        pass
 
     # Print diagnostic information
     console.print("\n" + "="*60, style="white")
@@ -70,7 +40,6 @@ def run_jupyter_lab(
     console.print("\n→ Starting Jupyter Lab", style="bold green")
     console.print(f"  Workspace: {workspace_dir}", style="dim")
     console.print(f"  Environment: {venv_dir}", style="dim")
-    console.print(f"  Python: {python_version} | JupyterLab: {jupyter_version}", style="dim")
     if extra_args:
         console.print(f"  Extra args: {' '.join(extra_args)}", style="dim")
     console.print("="*60 + "\n", style="white")
@@ -90,6 +59,11 @@ def run_jupyter_lab(
         "--KernelSpecManager.ensure_native_kernel=True",
         "--KernelSpecManager.allowed_kernelspecs=[]",
         "--ContentsManager.hide_globs=['*.venv', '.venv', '__pycache__', '*.egg-info', '.git']",
+        # Startup speed optimizations
+        "--LabApp.news_url=''",  # Skip news fetch (~100-500ms)
+        "--LabApp.collaborative=False",  # Skip collaboration init (~50-200ms)
+        # Performance optimizations
+        "--ServerApp.contents_manager_class=jupyter_server.services.contents.largefilemanager.AsyncLargeFileManager",  # Better async file handling
     ]
     if extra_args:
         cmd.extend(extra_args)

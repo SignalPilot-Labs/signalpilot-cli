@@ -411,7 +411,10 @@ def show_blocking_prompt(current: str, latest: str, package_name: str, timeout: 
 
 
 def check_cache_for_upgrades(venv_dir: Path) -> dict | None:
-    """Check cache for available upgrades (no network call).
+    """Check cache for available upgrades (no network call, no subprocess).
+
+    Reads current and latest versions from cache - does NOT call pip show.
+    Cache is populated/updated by background check after Jupyter starts.
 
     Args:
         venv_dir: Path to virtual environment
@@ -422,29 +425,32 @@ def check_cache_for_upgrades(venv_dir: Path) -> dict | None:
     """
     cache = load_cache()
 
-    # Check library version from cache
-    lib_info = detect_signalpilot_package(venv_dir)
-    if not lib_info:
-        return None
+    # Try to find cached package info (no subprocess calls)
+    # Check both possible packages in priority order
+    for lib_package in [SIGNALPILOT_AI_INTERNAL, SIGNALPILOT_AI]:
+        if lib_package not in cache:
+            continue
 
-    lib_package, lib_current = lib_info
+        if not is_cache_valid(cache, lib_package):
+            continue
 
-    # Check if we have cached version info
-    if not is_cache_valid(cache, lib_package):
-        return None
+        # Get current and latest from cache
+        lib_current = cache[lib_package].get('current_version')
+        lib_latest = cache[lib_package].get('latest_version')
 
-    lib_latest = cache[lib_package].get('latest_version')
-    if not lib_latest:
-        return None
+        if not lib_current or not lib_latest:
+            continue
 
-    # Compare versions
-    upgrade_type = compare_versions(lib_current, lib_latest)
-    if upgrade_type == "none":
-        return None
+        # Compare versions
+        upgrade_type = compare_versions(lib_current, lib_latest)
+        if upgrade_type == "none":
+            continue
 
-    return {
-        'type': upgrade_type,
-        'current': lib_current,
-        'latest': lib_latest,
-        'package': lib_package
-    }
+        return {
+            'type': upgrade_type,
+            'current': lib_current,
+            'latest': lib_latest,
+            'package': lib_package
+        }
+
+    return None
