@@ -64,7 +64,59 @@ def print_directory_tree(base_path: Path):
     console.print(tree)
 
 
-def run_jupyter_lab(venv_dir: Path, workspace_dir: Path, extra_args: list = None):
+def get_home_paths() -> tuple[Path, Path]:
+    """Get SignalPilotHome directory and venv paths."""
+    home_dir = Path.home() / "SignalPilotHome"
+    home_venv_dir = home_dir / ".venv"
+    return home_dir, home_venv_dir
+
+
+def check_venv_has_jupyter(venv_dir: Path) -> bool:
+    """Check if venv has jupyter installed."""
+    return (venv_dir / "bin" / "jupyter").exists()
+
+
+def check_local_venv(directory: Path = None) -> Path | None:
+    """Check if directory has a .venv with jupyter installed. Returns venv path or None."""
+    if directory is None:
+        directory = Path.cwd()
+
+    venv_dir = directory / ".venv"
+    if not venv_dir.exists():
+        return None
+
+    if not check_venv_has_jupyter(venv_dir):
+        return None
+
+    return venv_dir
+
+
+def ensure_home_setup() -> tuple[Path, Path]:
+    """Ensure SignalPilotHome exists with jupyter. Returns (home_dir, venv_dir) or exits."""
+    home_dir, home_venv_dir = get_home_paths()
+
+    if not home_dir.exists():
+        console.print("✗ SignalPilotHome not found", style="bold red")
+        console.print("\nRun 'uvx signalpilot init' first to set up your workspace", style="yellow")
+        sys.exit(1)
+
+    if not check_venv_has_jupyter(home_venv_dir):
+        console.print("✗ Jupyter not found in SignalPilotHome/.venv", style="bold red")
+        console.print("\nRun 'uvx signalpilot init' to set up your environment", style="yellow")
+        sys.exit(1)
+
+    return home_dir, home_venv_dir
+
+
+def launch_jupyter_with_interrupt_handler(venv_dir: Path, workspace_dir: Path, extra_args: list = None, show_warning: bool = False):
+    """Launch Jupyter Lab with proper environment and handle KeyboardInterrupt."""
+    try:
+        run_jupyter_lab(venv_dir, workspace_dir, extra_args=extra_args, show_warning=show_warning)
+    except KeyboardInterrupt:
+        console.print("\n\n→ Jupyter Lab stopped", style="dim")
+
+
+def run_jupyter_lab(venv_dir: Path, workspace_dir: Path, extra_args: list = None, show_warning: bool = False):
     """Launch Jupyter Lab with proper environment configuration"""
     import os
 
@@ -103,6 +155,14 @@ def run_jupyter_lab(venv_dir: Path, workspace_dir: Path, extra_args: list = None
     # Print diagnostic information
     console.print("\n" + "="*60, style="white")
     console.print(LOGO, style="cyan")
+
+    # Show warning if local .venv exists but we're using home .venv
+    if show_warning:
+        console.print("\n⚠️  WARNING: Local .venv detected with jupyter!", style="bold red")
+        console.print(f"⚠️  Location: {Path.cwd() / '.venv'}", style="bold red")
+        console.print("⚠️  Currently using home .venv, NOT your local project .venv", style="bold red")
+        console.print("⚠️  Run 'uvx signalpilot lab --project' to use local .venv\n", style="bold red")
+
     console.print("\n→ Starting Jupyter Lab", style="bold green")
     console.print(f"  Workspace: {workspace_dir}", style="dim")
     console.print(f"  Environment: {venv_dir}", style="dim")
@@ -125,6 +185,7 @@ def run_jupyter_lab(venv_dir: Path, workspace_dir: Path, extra_args: list = None
         "--IdentityProvider.token=''",
         "--KernelSpecManager.ensure_native_kernel=True",
         "--KernelSpecManager.allowed_kernelspecs=[]",
+        "--ContentsManager.hide_globs=['*.venv', '.venv', '__pycache__', '*.egg-info', '.git']",
     ]
     if extra_args:
         cmd.extend(extra_args)
@@ -216,7 +277,7 @@ def run_init(dev: bool = False):
     console.print("✓ uv found", style="green")
 
     # Create directory structure
-    home_dir = Path.home() / "SignalPilotHome"
+    home_dir, _ = get_home_paths()
     console.print(f"\n→ Setting up workspace at [bold]{home_dir}[/bold]", style="dim")
 
     # Create main directory and subdirectories
@@ -378,7 +439,7 @@ def run_init(dev: bool = False):
         response = typer.prompt("", default="y", show_default=True)
         if response.lower() in ["y", "yes"]:
             venv_dir = home_dir / ".venv"
-            run_jupyter_lab(venv_dir, home_dir)
+            launch_jupyter_with_interrupt_handler(venv_dir, home_dir)
     except (KeyboardInterrupt, EOFError):
         console.print("\n\n→ Setup complete! Run 'uvx signalpilot lab' when ready.\n", style="dim")
 
@@ -407,67 +468,59 @@ def init(
 @app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def lab(
     ctx: typer.Context,
-    here: bool = typer.Option(False, "--here", help="Open in current folder with default .venv"),
-    project: bool = typer.Option(False, "--project", help="Open in current folder with local .venv"),
+    home: bool = typer.Option(False, "--home", help="Use SignalPilotHome workspace + venv"),
+    project: bool = typer.Option(False, "--project", help="Use current folder + local .venv (fail if missing)"),
 ):
-    """Start Jupyter Lab in SignalPilotHome (pass extra args to jupyter lab)"""
+    """Start Jupyter Lab (default: current folder + home .venv)"""
 
     # Validate mutually exclusive flags
-    if here and project:
-        console.print("✗ Cannot use --here and --project together", style="bold red")
+    if home and project:
+        console.print("✗ Cannot use --home and --project together", style="bold red")
         sys.exit(1)
 
-    # Determine workspace and venv based on flags
-    if project:
-        # Use current folder and local .venv
-        workspace_dir = Path.cwd()
-        venv_dir = workspace_dir / ".venv"
+    # Ensure home setup exists
+    home_dir, home_venv_dir = ensure_home_setup()
 
-        if not venv_dir.exists():
-            console.print("✗ No .venv found in current directory", style="bold red")
+    # Determine workspace and venv based on flags
+    if home:
+        # Explicit home: Use SignalPilotHome for both workspace and venv
+        workspace_dir = home_dir
+        venv_dir = home_venv_dir
+        show_warning = False
+
+    elif project:
+        # Explicit project: Use current folder and local .venv (fail fast)
+        workspace_dir = Path.cwd()
+        local_venv = check_local_venv(workspace_dir)
+
+        if local_venv is None:
+            console.print("✗ No .venv with jupyter found in current directory", style="bold red")
             console.print("\nCreate a virtual environment first:", style="yellow")
             console.print("  uv venv --seed --python 3.12", style="dim")
             console.print("  uv pip install jupyterlab signalpilot-ai", style="dim")
             sys.exit(1)
 
-    elif here:
-        # Use current folder but default .venv from SignalPilotHome
-        workspace_dir = Path.cwd()
-        home_dir = Path.home() / "SignalPilotHome"
-        venv_dir = home_dir / ".venv"
-
-        if not home_dir.exists():
-            console.print("✗ SignalPilotHome not found", style="bold red")
-            console.print("\nRun 'uvx signalpilot init' first to set up your workspace", style="yellow")
-            sys.exit(1)
+        venv_dir = local_venv
+        show_warning = False
 
     else:
-        # Default: Use SignalPilotHome for both workspace and venv
-        home_dir = Path.home() / "SignalPilotHome"
-        workspace_dir = home_dir
-        venv_dir = home_dir / ".venv"
+        # Default: Use current folder + home .venv
+        workspace_dir = Path.cwd()
+        venv_dir = home_venv_dir
 
-        if not home_dir.exists():
-            console.print("✗ SignalPilotHome not found", style="bold red")
-            console.print("\nRun 'uvx signalpilot init' first to set up your workspace", style="yellow")
-            sys.exit(1)
-
-    # Check if jupyter exists in the venv
-    venv_jupyter = venv_dir / "bin" / "jupyter"
-    if not venv_jupyter.exists():
-        console.print("✗ Jupyter not found in virtual environment", style="bold red")
-        if project or here:
-            console.print("\nInstall Jupyter in the environment:", style="yellow")
-            console.print("  uv pip install jupyterlab", style="dim")
-        else:
-            console.print("\nRun 'uvx signalpilot init' to set up your environment", style="yellow")
-        sys.exit(1)
+        # Warn if local .venv exists with jupyter (but not if we're in SignalPilotHome)
+        local_venv = check_local_venv(workspace_dir)
+        show_warning = local_venv is not None and workspace_dir != home_dir
 
     # Launch Jupyter Lab with proper environment setup
-    try:
-        run_jupyter_lab(venv_dir, workspace_dir, extra_args=list(ctx.args) if ctx.args else None)
-    except KeyboardInterrupt:
-        console.print("\n\n→ Jupyter Lab stopped", style="dim")
+    launch_jupyter_with_interrupt_handler(venv_dir, workspace_dir, extra_args=list(ctx.args) if ctx.args else None, show_warning=show_warning)
+
+
+@app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+def home(ctx: typer.Context):
+    """Start Jupyter Lab in SignalPilotHome (shortcut for 'lab --home')"""
+    home_dir, home_venv_dir = ensure_home_setup()
+    launch_jupyter_with_interrupt_handler(home_venv_dir, home_dir, extra_args=list(ctx.args) if ctx.args else None)
 
 
 if __name__ == "__main__":
