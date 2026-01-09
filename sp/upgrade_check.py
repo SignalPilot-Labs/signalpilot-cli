@@ -2,7 +2,6 @@
 
 import json
 import re
-import subprocess
 import threading
 import time
 import urllib.request
@@ -176,7 +175,9 @@ def is_cache_valid(cache_data: dict, package_key: str) -> bool:
 # ============================================================================
 
 def get_installed_version(venv_dir: Path, package_name: str) -> str | None:
-    """Get installed version of package using pip show.
+    """Get installed version of package using importlib.metadata.
+
+    Much faster than pip show since it doesn't spawn a subprocess.
 
     Args:
         venv_dir: Path to virtual environment
@@ -185,23 +186,35 @@ def get_installed_version(venv_dir: Path, package_name: str) -> str | None:
     Returns:
         Version string, or None if not installed
     """
+    import sys
+    from importlib.metadata import version, PackageNotFoundError
+
+    # Find site-packages directory
+    lib_dir = venv_dir / "lib"
+    site_packages_dirs = list(lib_dir.glob("python*/site-packages"))
+
+    if not site_packages_dirs:
+        return None
+
+    site_packages = str(site_packages_dirs[0])
+
+    # Temporarily add venv's site-packages to path
+    original_path = sys.path.copy()
+    sys.path.insert(0, site_packages)
+
     try:
-        result = subprocess.run(
-            [str(venv_dir / "bin" / "pip"), "show", package_name],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        for line in result.stdout.split("\n"):
-            if line.startswith("Version:"):
-                return line.split(":", 1)[1].strip()
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        pass
-    return None
+        return version(package_name)
+    except PackageNotFoundError:
+        return None
+    finally:
+        # Restore original path
+        sys.path = original_path
 
 
 def detect_signalpilot_package(venv_dir: Path) -> tuple[str, str] | None:
     """Detect which signalpilot package is installed (ai vs ai-internal).
+
+    Checks for public package first (more common), then internal.
 
     Args:
         venv_dir: Path to virtual environment
@@ -209,15 +222,15 @@ def detect_signalpilot_package(venv_dir: Path) -> tuple[str, str] | None:
     Returns:
         Tuple of (package_name, version), or None if not found
     """
-    # Check for internal first (less common)
-    version = get_installed_version(venv_dir, SIGNALPILOT_AI_INTERNAL)
-    if version:
-        return (SIGNALPILOT_AI_INTERNAL, version)
-
-    # Check for regular package
+    # Check for public package first (more common)
     version = get_installed_version(venv_dir, SIGNALPILOT_AI)
     if version:
         return (SIGNALPILOT_AI, version)
+
+    # Check for internal package (less common)
+    version = get_installed_version(venv_dir, SIGNALPILOT_AI_INTERNAL)
+    if version:
+        return (SIGNALPILOT_AI_INTERNAL, version)
 
     return None
 
@@ -426,8 +439,8 @@ def check_cache_for_upgrades(venv_dir: Path) -> dict | None:
     cache = load_cache()
 
     # Try to find cached package info (no subprocess calls)
-    # Check both possible packages in priority order
-    for lib_package in [SIGNALPILOT_AI_INTERNAL, SIGNALPILOT_AI]:
+    # Check both possible packages in priority order (public first, more common)
+    for lib_package in [SIGNALPILOT_AI, SIGNALPILOT_AI_INTERNAL]:
         if lib_package not in cache:
             continue
 

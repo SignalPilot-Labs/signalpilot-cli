@@ -62,6 +62,46 @@ uvx signalpilot@latest lab
 
 **⚠️ Smart Detection:** If a local `.venv` with jupyter is detected in your current directory, you'll see a red warning. Use `--project` flag to use it instead.
 
+## Keeping SignalPilot Updated
+
+SignalPilot automatically checks for updates when you launch Jupyter Lab. When an update is available, you'll see a notification:
+
+**For minor updates:**
+```
+╭─────────────── 📦 SignalPilot Update ───────────────╮
+│ Update Available: 0.11.8 (installed: 0.11.7)        │
+│ Run 'sp upgrade' to update                          │
+╰──────────────────────────────────────────────────────╯
+```
+
+**For major updates:**
+```
+╭─────────────── 📦 SignalPilot Update ───────────────╮
+│ Important Update: 0.12.0 (installed: 0.11.7)        │
+│ This is a MAJOR update                              │
+╰──────────────────────────────────────────────────────╯
+Upgrade now? [y/n] (n):
+```
+
+### Manual Upgrade
+
+Upgrade both the CLI and library anytime:
+
+```bash
+uvx signalpilot@latest upgrade
+```
+
+Upgrade your project's local environment:
+
+```bash
+cd /path/to/project
+uvx signalpilot@latest upgrade --project
+```
+
+**Note:** Update checks happen in the background and never slow down Jupyter startup. You can disable them in `~/SignalPilotHome/.signalpilot/config.toml` if desired.
+
+📖 **Full upgrade guide:** [docs/UPGRADE-USER-GUIDE.md](docs/UPGRADE-USER-GUIDE.md)
+
 ## What Gets Installed
 
 **Python Packages:**
