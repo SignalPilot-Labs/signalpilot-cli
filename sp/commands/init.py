@@ -8,8 +8,10 @@ from pathlib import Path
 import typer
 from rich.tree import Tree
 
-from sp.core.config import SP_HOME
+from sp import __version__
+from sp.core.config import SP_HOME, SIGNALPILOT_CLI
 from sp.core.environment import check_uv, get_home_paths
+from sp.upgrade_check import get_pypi_version, compare_versions
 # TODO: @tarik update when we decide about demo projects
 # from sp.demos import start_demo_download
 from sp.ui.console import console, LOGO
@@ -43,7 +45,7 @@ def print_directory_tree(base_path: Path):
         base_path: Base directory path
     """
     tree = Tree(
-        f"[bold cyan]{base_path.name}/[/bold cyan]",
+        f"[bold cyan]~/{base_path.name}/[/bold cyan]",
         guide_style="dim"
     )
 
@@ -136,6 +138,27 @@ def run_init(dev: bool = False):
     Args:
         dev: If True, use dev configuration (signalpilot-ai-internal)
     """
+    # Show logo and CLI version
+    console.print(LOGO, style="cyan")
+    console.print(f"\n          Installer CLI v{__version__}\n", style="bold white")
+
+    # Auto-upgrade CLI if outdated (check PyPI, no cache)
+    console.print("→ Checking for updates...", style="dim")
+    latest_version = get_pypi_version(SIGNALPILOT_CLI, timeout=5.0)
+
+    if latest_version and latest_version != __version__:
+        upgrade_type = compare_versions(__version__, latest_version)
+        if upgrade_type != "none":
+            console.print(f"  New version available: v{latest_version}", style="yellow")
+            from sp.commands.upgrade import upgrade_cli
+            if upgrade_cli():
+                # Re-exec with new CLI version
+                import os
+                console.print("\n→ Restarting with new version...\n", style="bold cyan")
+                os.execvp("uvx", ["uvx", "signalpilot"])
+    else:
+        console.print("✓ Up to date", style="green")
+
     # Check for uv
     console.print("→ Checking for uv...", style="dim")
     if not check_uv():

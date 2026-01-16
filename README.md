@@ -29,7 +29,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 **Install SignalPilot:**
 ```bash
-uvx signalpilot@latest
+uvx signalpilot
 ```
 
 **What happens:**
@@ -51,7 +51,7 @@ uvx signalpilot@latest
 Once installed, start Jupyter Lab with:
 
 ```bash
-uvx signalpilot@latest lab
+uvx signalpilot lab
 ```
 
 **What this does:**
@@ -88,14 +88,14 @@ Upgrade now? [y/n] (n):
 Upgrade both the CLI and library anytime:
 
 ```bash
-uvx signalpilot@latest upgrade
+uvx signalpilot upgrade
 ```
 
 Upgrade your project's local environment:
 
 ```bash
 cd /path/to/project
-uvx signalpilot@latest upgrade --project
+uvx signalpilot upgrade --project
 ```
 
 **Note:** Update checks happen in the background and never slow down Jupyter startup. You can disable them in `~/SignalPilotHome/.signalpilot/config.toml` if desired.
@@ -131,7 +131,7 @@ SignalPilot offers three ways to launch Jupyter Lab:
 
 ```bash
 cd ~/projects/my-analysis
-uvx signalpilot@latest lab
+uvx signalpilot lab
 ```
 
 **What this does:**
@@ -145,7 +145,7 @@ uvx signalpilot@latest lab
 
 ```bash
 cd ~/projects/custom-analytics
-uvx signalpilot@latest lab --project
+uvx signalpilot lab --project
 ```
 
 **What this does:**
@@ -163,15 +163,15 @@ mkdir ~/projects/custom-analytics && cd ~/projects/custom-analytics
 uv venv --seed --python 3.12
 source .venv/bin/activate
 uv pip install jupyterlab signalpilot-ai pandas numpy matplotlib plotly
-uvx signalpilot@latest lab --project
+uvx signalpilot lab --project
 ```
 
 ### Home Mode (SignalPilotHome Workspace + Home Environment)
 
 ```bash
-uvx signalpilot@latest lab --home
+uvx signalpilot lab --home
 # Or use the shortcut:
-uvx signalpilot@latest home
+uvx signalpilot home
 ```
 
 **What this does:**
@@ -185,17 +185,17 @@ You can pass any Jupyter Lab flags after the command:
 
 ```bash
 # Custom port
-uvx signalpilot@latest lab --port=8889
+uvx signalpilot lab --port=8889
 
 # Disable browser auto-open
-uvx signalpilot@latest lab --no-browser
+uvx signalpilot lab --no-browser
 
 # Combine with mode flags
-uvx signalpilot@latest lab --project --port=8889
-uvx signalpilot@latest home --no-browser
+uvx signalpilot lab --project --port=8889
+uvx signalpilot home --no-browser
 
 # Bind to all interfaces (remote access)
-uvx signalpilot@latest lab --ip=0.0.0.0 --port=9999
+uvx signalpilot lab --ip=0.0.0.0 --port=9999
 ```
 
 All standard `jupyter lab` arguments work.
@@ -204,7 +204,7 @@ All standard `jupyter lab` arguments work.
 
 ### Option 1: Run with uvx (Recommended)
 ```bash
-uvx signalpilot@latest
+uvx signalpilot
 ```
 No permanent installation needed. Perfect for most users. Always gets the latest version.
 
