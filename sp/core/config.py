@@ -14,7 +14,9 @@ SP_CONFIG_FILE = SP_CONFIG_DIR / "config.toml"
 SP_USER_SKILLS = SP_HOME / "user-skills"
 SP_USER_RULES = SP_HOME / "user-rules"
 SP_TEAM_WORKSPACE = SP_HOME / "team-workspace"
-SP_DEMO_PROJECT = SP_HOME / "demo-project"
+# TODO: @tarik update when we decide about demo projects
+# SP_DEMO_PROJECT = SP_HOME / "demo-project"
+SP_DATA = SP_HOME / "data"
 
 # Package names
 SIGNALPILOT_CLI = "signalpilot"

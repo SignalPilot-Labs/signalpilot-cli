@@ -10,7 +10,8 @@ from rich.tree import Tree
 
 from sp.core.config import SP_HOME
 from sp.core.environment import check_uv, get_home_paths
-from sp.demos import start_demo_download
+# TODO: @tarik update when we decide about demo projects
+# from sp.demos import start_demo_download
 from sp.ui.console import console, LOGO
 from sp.commands.lab import launch_jupyter_with_upgrade_check
 
@@ -47,7 +48,9 @@ def print_directory_tree(base_path: Path):
     tree.add("[cyan]user-skills/[/cyan]")
     tree.add("[cyan]user-rules/[/cyan]")
     tree.add("[cyan]team-workspace/[/cyan]")
-    tree.add("[cyan]demo-project/[/cyan]")
+    # TODO: @tarik update when we decide about demo projects
+    # tree.add("[cyan]demo-project/[/cyan]")
+    tree.add("[cyan]data/[/cyan]")
 
     console.print(tree)
 
@@ -151,7 +154,9 @@ def run_init(dev: bool = False):
     (home_dir / "user-skills").mkdir(exist_ok=True)
     (home_dir / "user-rules").mkdir(exist_ok=True)
     (home_dir / "team-workspace").mkdir(exist_ok=True)
-    (home_dir / "demo-project").mkdir(exist_ok=True)
+    # TODO: @tarik update when we decide about demo projects
+    # (home_dir / "demo-project").mkdir(exist_ok=True)
+    (home_dir / "data").mkdir(exist_ok=True)
 
     console.print("\n✓ Directory structure created:", style="green")
     print_directory_tree(home_dir)
@@ -189,12 +194,12 @@ def run_init(dev: bool = False):
 
     console.print("\n✓ Files downloaded successfully", style="green")
 
-    # Download demo files in background (non-blocking)
-    demo_dir = home_dir / "demo-project"
-    demo_thread = None
-    demo_result = []
-
-    demo_thread, demo_result = start_demo_download(demo_dir)
+    # TODO: @tarik update when we decide about demo projects
+    # # Download demo files in background (non-blocking)
+    # demo_dir = home_dir / "demo-project"
+    # demo_thread = None
+    # demo_result = []
+    # demo_thread, demo_result = start_demo_download(demo_dir)
 
     # Create venv with specific Python version
     console.print("\n→ Creating Python virtual environment...", style="bold cyan")
@@ -236,19 +241,20 @@ def run_init(dev: bool = False):
     # Optimize Jupyter cache
     optimize_jupyter_cache(home_dir)
 
-    # Wait for demo downloads to complete and show result
-    if demo_thread:
-        console.print("\n→ Finalizing demo files...", style="dim")
-        demo_thread.join(timeout=30)  # Wait up to 30 seconds
-        if demo_result:
-            local_count, downloaded_count = demo_result[0]
-            total_count = local_count + downloaded_count
-            if total_count > 0:
-                console.print(f"✓ Demo files ready ({total_count} files)", style="green")
-            else:
-                console.print("→ Demo files unavailable", style="yellow")
-        else:
-            console.print("→ Demo files still downloading in background", style="yellow")
+    # TODO: @tarik update when we decide about demo projects
+    # # Wait for demo downloads to complete and show result
+    # if demo_thread:
+    #     console.print("\n→ Finalizing demo files...", style="dim")
+    #     demo_thread.join(timeout=30)  # Wait up to 30 seconds
+    #     if demo_result:
+    #         local_count, downloaded_count = demo_result[0]
+    #         total_count = local_count + downloaded_count
+    #         if total_count > 0:
+    #             console.print(f"✓ Demo files ready ({total_count} files)", style="green")
+    #         else:
+    #             console.print("→ Demo files unavailable", style="yellow")
+    #     else:
+    #         console.print("→ Demo files still downloading in background", style="yellow")
 
     # Get version information from the venv
     python_version = "unknown"
