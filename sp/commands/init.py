@@ -181,6 +181,9 @@ def run_init(dev: bool = False):
     # Always download start-here.ipynb
     download_file(base_url + "start-here.ipynb", home_dir / "start-here.ipynb")
 
+    # Download team-workspace README
+    download_file(base_url + "team-workspace/README.md", home_dir / "team-workspace" / "README.md")
+
     # Download pyproject.toml if approved
     if download_pyproject:
         if dev:
