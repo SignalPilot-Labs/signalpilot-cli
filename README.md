@@ -46,6 +46,14 @@ uvx signalpilot
 - **SignalPilot runs on it** — native integration with kernel
 - Modern Python package management with better dependency resolution
 
+## Check Version
+
+```bash
+uvx signalpilot version
+```
+
+Shows the installed CLI version with the SignalPilot logo.
+
 ## Launch Jupyter Lab Anytime
 
 Once installed, start Jupyter Lab with:
@@ -98,6 +106,19 @@ cd /path/to/project
 uvx signalpilot upgrade --project
 ```
 
+### How Upgrade Works
+
+The upgrade command is **context-aware**:
+
+| Context | CLI Upgrade | Library Upgrade |
+|---------|-------------|-----------------|
+| **uvx users** | Clears uvx cache (no permanent install) | `uv pip install --upgrade` |
+| **Tool users** (`uv tool install`) | `uv tool install --force` + clears cache | `uv pip install --upgrade` |
+
+**Why?** uvx users prefer ephemeral execution without permanent installations. The CLI detects this by checking if `~/.local/bin/signalpilot` exists.
+
+**Cache invalidation:** `uvx --refresh` is unreliable (known uv issue), so we use `uv cache clean signalpilot` which reliably clears the uvx cache. Next `uvx signalpilot` run fetches the fresh version.
+
 **Note:** Update checks happen in the background and never slow down Jupyter startup. You can disable them in `~/SignalPilotHome/.signalpilot/config.toml` if desired.
 
 📖 **Full upgrade guide:** [docs/UPGRADE-USER-GUIDE.md](docs/UPGRADE-USER-GUIDE.md)
@@ -117,7 +138,6 @@ uvx signalpilot upgrade --project
 ├── user-skills/       # Custom analysis patterns
 ├── user-rules/        # Team coding standards
 ├── team-workspace/    # Shared notebooks (git-tracked)
-├── demo-project/      # Example notebooks
 ├── pyproject.toml     # Python project config
 ├── start-here.ipynb   # Quick start guide
 └── .venv/             # Python environment
