@@ -16,19 +16,22 @@ from sp.ui.console import console, LOGO
 from sp.commands.lab import launch_jupyter_with_upgrade_check
 
 
-def download_file(url: str, dest_path: Path):
+def download_file(url: str, dest_path: Path, optional: bool = False):
     """Download a file from URL to destination path.
 
     Args:
         url: URL to download from
         dest_path: Destination file path
+        optional: If True, don't exit on failure (just skip silently)
 
-    Exits on failure.
+    Exits on failure unless optional=True.
     """
     try:
         console.print(f"  → Downloading {dest_path.name}...", style="dim")
         urllib.request.urlretrieve(url, dest_path)
     except Exception as e:
+        if optional:
+            return  # Skip silently for optional files
         console.print(f"  ✗ Failed to download {dest_path.name}: {e}", style="bold red")
         sys.exit(1)
 
@@ -178,11 +181,11 @@ def run_init(dev: bool = False):
 
     console.print("\n→ Downloading workspace files...", style="dim")
 
-    # Always download start-here.ipynb
-    download_file(base_url + "start-here.ipynb", home_dir / "start-here.ipynb")
+    # Download start-here.ipynb (optional)
+    download_file(base_url + "start-here.ipynb", home_dir / "start-here.ipynb", optional=True)
 
-    # Download team-workspace README
-    download_file(base_url + "team-workspace/README.md", home_dir / "team-workspace" / "README.md")
+    # Download team-workspace README (optional)
+    download_file(base_url + "team-workspace/README.md", home_dir / "team-workspace" / "README.md", optional=True)
 
     # Download pyproject.toml if approved
     if download_pyproject:
