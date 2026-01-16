@@ -10,24 +10,28 @@ from rich.tree import Tree
 
 from sp.core.config import SP_HOME
 from sp.core.environment import check_uv, get_home_paths
-from sp.demos import start_demo_download
+# TODO: @tarik update when we decide about demo projects
+# from sp.demos import start_demo_download
 from sp.ui.console import console, LOGO
 from sp.commands.lab import launch_jupyter_with_upgrade_check
 
 
-def download_file(url: str, dest_path: Path):
+def download_file(url: str, dest_path: Path, optional: bool = False):
     """Download a file from URL to destination path.
 
     Args:
         url: URL to download from
         dest_path: Destination file path
+        optional: If True, don't exit on failure (just skip silently)
 
-    Exits on failure.
+    Exits on failure unless optional=True.
     """
     try:
         console.print(f"  → Downloading {dest_path.name}...", style="dim")
         urllib.request.urlretrieve(url, dest_path)
     except Exception as e:
+        if optional:
+            return  # Skip silently for optional files
         console.print(f"  ✗ Failed to download {dest_path.name}: {e}", style="bold red")
         sys.exit(1)
 
@@ -47,7 +51,9 @@ def print_directory_tree(base_path: Path):
     tree.add("[cyan]user-skills/[/cyan]")
     tree.add("[cyan]user-rules/[/cyan]")
     tree.add("[cyan]team-workspace/[/cyan]")
-    tree.add("[cyan]demo-project/[/cyan]")
+    # TODO: @tarik update when we decide about demo projects
+    # tree.add("[cyan]demo-project/[/cyan]")
+    tree.add("[cyan]data/[/cyan]")
 
     console.print(tree)
 
@@ -151,7 +157,9 @@ def run_init(dev: bool = False):
     (home_dir / "user-skills").mkdir(exist_ok=True)
     (home_dir / "user-rules").mkdir(exist_ok=True)
     (home_dir / "team-workspace").mkdir(exist_ok=True)
-    (home_dir / "demo-project").mkdir(exist_ok=True)
+    # TODO: @tarik update when we decide about demo projects
+    # (home_dir / "demo-project").mkdir(exist_ok=True)
+    (home_dir / "data").mkdir(exist_ok=True)
 
     console.print("\n✓ Directory structure created:", style="green")
     print_directory_tree(home_dir)
@@ -173,8 +181,11 @@ def run_init(dev: bool = False):
 
     console.print("\n→ Downloading workspace files...", style="dim")
 
-    # Always download start-here.ipynb
-    download_file(base_url + "start-here.ipynb", home_dir / "start-here.ipynb")
+    # Download start-here.ipynb (optional)
+    download_file(base_url + "start-here.ipynb", home_dir / "start-here.ipynb", optional=True)
+
+    # Download team-workspace README (optional)
+    download_file(base_url + "team-workspace/README.md", home_dir / "team-workspace" / "README.md", optional=True)
 
     # Download pyproject.toml if approved
     if download_pyproject:
@@ -189,12 +200,12 @@ def run_init(dev: bool = False):
 
     console.print("\n✓ Files downloaded successfully", style="green")
 
-    # Download demo files in background (non-blocking)
-    demo_dir = home_dir / "demo-project"
-    demo_thread = None
-    demo_result = []
-
-    demo_thread, demo_result = start_demo_download(demo_dir)
+    # TODO: @tarik update when we decide about demo projects
+    # # Download demo files in background (non-blocking)
+    # demo_dir = home_dir / "demo-project"
+    # demo_thread = None
+    # demo_result = []
+    # demo_thread, demo_result = start_demo_download(demo_dir)
 
     # Create venv with specific Python version
     console.print("\n→ Creating Python virtual environment...", style="bold cyan")
@@ -236,19 +247,20 @@ def run_init(dev: bool = False):
     # Optimize Jupyter cache
     optimize_jupyter_cache(home_dir)
 
-    # Wait for demo downloads to complete and show result
-    if demo_thread:
-        console.print("\n→ Finalizing demo files...", style="dim")
-        demo_thread.join(timeout=30)  # Wait up to 30 seconds
-        if demo_result:
-            local_count, downloaded_count = demo_result[0]
-            total_count = local_count + downloaded_count
-            if total_count > 0:
-                console.print(f"✓ Demo files ready ({total_count} files)", style="green")
-            else:
-                console.print("→ Demo files unavailable", style="yellow")
-        else:
-            console.print("→ Demo files still downloading in background", style="yellow")
+    # TODO: @tarik update when we decide about demo projects
+    # # Wait for demo downloads to complete and show result
+    # if demo_thread:
+    #     console.print("\n→ Finalizing demo files...", style="dim")
+    #     demo_thread.join(timeout=30)  # Wait up to 30 seconds
+    #     if demo_result:
+    #         local_count, downloaded_count = demo_result[0]
+    #         total_count = local_count + downloaded_count
+    #         if total_count > 0:
+    #             console.print(f"✓ Demo files ready ({total_count} files)", style="green")
+    #         else:
+    #             console.print("→ Demo files unavailable", style="yellow")
+    #     else:
+    #         console.print("→ Demo files still downloading in background", style="yellow")
 
     # Get version information from the venv
     python_version = "unknown"
