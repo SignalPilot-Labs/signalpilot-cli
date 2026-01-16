@@ -20,11 +20,9 @@ from sp.upgrade_check import (
 def upgrade_cli() -> bool:
     """Upgrade signalpilot CLI package.
 
-    Strategy:
-    1. Check current vs latest version
-    2. If already latest, return True (no-op)
-    3. Warn about uvx execution context
-    4. Run: uv tool install --force signalpilot
+    Strategy varies by execution context:
+    - uvx users: Clean cache (no permanent install), next run gets fresh version
+    - tool users: Force reinstall via uv tool install
 
     Returns:
         True if successful or already up-to-date, False on error
@@ -50,6 +48,37 @@ def upgrade_cli() -> bool:
     console.print(f"  Current: {current_version}", style="dim")
     console.print(f"  Latest:  {latest_version}", style="green")
 
+    # Different strategy based on execution context
+    if is_running_via_uvx():
+        return _upgrade_cli_uvx(latest_version)
+    else:
+        return _upgrade_cli_tool(latest_version)
+
+
+def _upgrade_cli_uvx(latest_version: str) -> bool:
+    """Upgrade strategy for uvx users - clean cache, continue session."""
+    console.print("\n→ Clearing uvx cache...", style="bold cyan")
+
+    try:
+        subprocess.run(
+            ["uv", "cache", "clean", SIGNALPILOT_CLI],
+            check=True,
+            capture_output=True,
+        )
+        console.print("✓ Cache cleared", style="green")
+        console.print(f"  Next run will use v{latest_version}", style="dim")
+        return True
+    except subprocess.CalledProcessError:
+        console.print("✗ Failed to clear cache", style="red")
+        console.print("  Try manually: uv cache clean signalpilot", style="dim")
+        return False
+    except FileNotFoundError:
+        console.print("✗ uv not found in PATH", style="bold red")
+        return False
+
+
+def _upgrade_cli_tool(latest_version: str) -> bool:
+    """Upgrade strategy for tool users - force reinstall."""
     console.print("\n→ Upgrading CLI...", style="bold cyan")
 
     try:
@@ -58,11 +87,6 @@ def upgrade_cli() -> bool:
             check=True,
         )
         console.print(f"✓ CLI upgraded to v{latest_version}", style="bold green")
-
-        # Inform about uvx context (tool install above automatically updates uvx cache)
-        if is_running_via_uvx():
-            console.print("[dim]→ uvx cache updated (new version will be used next time)[/dim]")
-
         return True
     except subprocess.CalledProcessError as e:
         console.print(f"✗ CLI upgrade failed with exit code {e.returncode}", style="bold red")
@@ -126,7 +150,13 @@ def upgrade_library(venv_dir: Path) -> bool:
             cwd=venv_dir.parent,  # Run from SignalPilotHome directory
             check=True,
         )
-        console.print(f"✓ Library upgraded successfully", style="bold green")
+        # Get actual installed version after upgrade
+        new_lib_info = detect_signalpilot_package(venv_dir)
+        if new_lib_info:
+            _, new_version = new_lib_info
+            console.print(f"✓ Library upgraded to v{new_version}", style="bold green")
+        else:
+            console.print(f"✓ Library upgraded successfully", style="bold green")
         return True
     except subprocess.CalledProcessError as e:
         console.print(f"✗ Library upgrade failed with exit code {e.returncode}", style="bold red")

@@ -2,9 +2,11 @@
 
 import typer
 
+from sp import __version__
 from sp.commands.init import init_command, run_init
 from sp.commands.lab import lab_command, home_command
 from sp.commands.upgrade import upgrade_command
+from sp.ui.console import console, LOGO
 
 app = typer.Typer(
     name="sp",
@@ -60,6 +62,13 @@ def upgrade(
 ):
     """Upgrade SignalPilot CLI and library"""
     upgrade_command(project=project)
+
+
+@app.command()
+def version():
+    """Show SignalPilot CLI version"""
+    console.print(LOGO, style="cyan")
+    console.print(f"\n          SignalPilot Installer CLI v{__version__}\n", style="bold white")
 
 
 if __name__ == "__main__":
