@@ -78,7 +78,7 @@ def _upgrade_cli_uvx(latest_version: str) -> bool:
 
 
 def _upgrade_cli_tool(latest_version: str) -> bool:
-    """Upgrade strategy for tool users - force reinstall."""
+    """Upgrade strategy for tool users - force reinstall + clear uvx cache."""
     console.print("\n→ Upgrading CLI...", style="bold cyan")
 
     try:
@@ -87,6 +87,12 @@ def _upgrade_cli_tool(latest_version: str) -> bool:
             check=True,
         )
         console.print(f"✓ CLI upgraded to v{latest_version}", style="bold green")
+
+        # Also clear uvx cache for consistency
+        subprocess.run(
+            ["uv", "cache", "clean", SIGNALPILOT_CLI],
+            capture_output=True,
+        )
         return True
     except subprocess.CalledProcessError as e:
         console.print(f"✗ CLI upgrade failed with exit code {e.returncode}", style="bold red")

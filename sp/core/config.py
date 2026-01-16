@@ -55,8 +55,18 @@ def is_initialized() -> bool:
 
 
 def is_running_via_uvx() -> bool:
-    """Detect if running in uvx ephemeral environment context."""
-    return "uvx" in sys.prefix or ".local/share/uv" in sys.prefix
+    """Detect if running in uvx ephemeral environment context.
+
+    Returns True only for ephemeral uvx execution, not for installed tools.
+    Checks if signalpilot is installed as a uv tool (has bin symlink).
+    """
+    # If tool is installed, the bin symlink exists
+    tool_bin = Path.home() / ".local" / "bin" / SIGNALPILOT_CLI
+    if tool_bin.exists():
+        return False  # Installed tool, not ephemeral uvx
+
+    # Check if running from uv's tool/cache directory (uvx ephemeral)
+    return ".local/share/uv" in sys.prefix or "uvx" in sys.prefix
 
 
 def load_config() -> dict:
